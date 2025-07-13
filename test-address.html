@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Address Creation</title>
+  </head>
+  <body>
+    <h1>Test Address Creation</h1>
+
+    <div>
+      <h3>Step 1: Login</h3>
+      <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        value="test@example.com"
+      /><br /><br />
+      <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        value="password123"
+      /><br /><br />
+      <button onclick="login()">Login</button>
+      <div id="loginResult"></div>
+    </div>
+
+    <hr />
+
+    <div>
+      <h3>Step 2: Create Address</h3>
+      <input
+        type="text"
+        id="fullName"
+        placeholder="Full Name"
+        value="Test User"
+      /><br /><br />
+      <input
+        type="text"
+        id="phoneNumber"
+        placeholder="Phone Number"
+        value="1234567890"
+      /><br /><br />
+      <input
+        type="text"
+        id="addressLine1"
+        placeholder="Address Line 1"
+        value="123 Test St"
+      /><br /><br />
+      <input
+        type="text"
+        id="city"
+        placeholder="City"
+        value="Test City"
+      /><br /><br />
+      <input
+        type="text"
+        id="state"
+        placeholder="State"
+        value="Test State"
+      /><br /><br />
+      <input
+        type="text"
+        id="postalCode"
+        placeholder="Postal Code"
+        value="12345"
+      /><br /><br />
+      <button onclick="createAddress()">Create Address</button>
+      <div id="addressResult"></div>
+    </div>
+
+    <hr />
+
+    <div>
+      <h3>Step 3: Get Addresses</h3>
+      <button onclick="getAddresses()">Get Addresses</button>
+      <div id="addressesResult"></div>
+    </div>
+
+    <script>
+      let accessToken = "";
+
+      async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch("http://localhost:8080/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            accessToken = data.accessToken;
+            document.getElementById("loginResult").innerHTML =
+              '<p style="color: green;">Login successful! Token: ' +
+              accessToken.substring(0, 50) +
+              "...</p>";
+          } else {
+            document.getElementById("loginResult").innerHTML =
+              '<p style="color: red;">Login failed: ' + data.message + "</p>";
+          }
+        } catch (error) {
+          document.getElementById("loginResult").innerHTML =
+            '<p style="color: red;">Error: ' + error.message + "</p>";
+        }
+      }
+
+      async function createAddress() {
+        if (!accessToken) {
+          document.getElementById("addressResult").innerHTML =
+            '<p style="color: red;">Please login first!</p>';
+          return;
+        }
+
+        const addressData = {
+          addressType: "HOME",
+          fullName: document.getElementById("fullName").value,
+          phoneNumber: document.getElementById("phoneNumber").value,
+          addressLine1: document.getElementById("addressLine1").value,
+          addressLine2: "",
+          city: document.getElementById("city").value,
+          state: document.getElementById("state").value,
+          postalCode: document.getElementById("postalCode").value,
+          country: "India",
+          isDefault: false,
+        };
+
+        try {
+          const response = await fetch("http://localhost:8080/api/addresses", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + accessToken,
+            },
+            body: JSON.stringify(addressData),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            document.getElementById("addressResult").innerHTML =
+              '<p style="color: green;">Address created successfully!</p><pre>' +
+              JSON.stringify(data, null, 2) +
+              "</pre>";
+          } else {
+            document.getElementById("addressResult").innerHTML =
+              '<p style="color: red;">Failed to create address: ' +
+              data.message +
+              "</p><pre>" +
+              JSON.stringify(data, null, 2) +
+              "</pre>";
+          }
+        } catch (error) {
+          document.getElementById("addressResult").innerHTML =
+            '<p style="color: red;">Error: ' + error.message + "</p>";
+        }
+      }
+
+      async function getAddresses() {
+        if (!accessToken) {
+          document.getElementById("addressesResult").innerHTML =
+            '<p style="color: red;">Please login first!</p>';
+          return;
+        }
+
+        try {
+          const response = await fetch("http://localhost:8080/api/addresses", {
+            method: "GET",
+            headers: {
+              Authorization: "Bearer " + accessToken,
+            },
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            document.getElementById("addressesResult").innerHTML =
+              '<p style="color: green;">Addresses retrieved successfully!</p><pre>' +
+              JSON.stringify(data, null, 2) +
+              "</pre>";
+          } else {
+            document.getElementById("addressesResult").innerHTML =
+              '<p style="color: red;">Failed to get addresses: ' +
+              data.message +
+              "</p>";
+          }
+        } catch (error) {
+          document.getElementById("addressesResult").innerHTML =
+            '<p style="color: red;">Error: ' + error.message + "</p>";
+        }
+      }
+    </script>
+  </body>
+</html>

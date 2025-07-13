@@ -1,0 +1,29 @@
+{
+  "name": "bloomkart-flower-ecommerce",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "bootstrap": "^5.3.2",
+    "jwt-decode": "^3.1.2",
+    "react": "^18.2.0",
+    "react-datepicker": "^4.24.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-icons": "^4.12.0",
+    "react-image-crop": "^10.1.1",
+    "react-router-dom": "^6.21.2",
+    "react-slick": "^0.30.1",
+    "react-toastify": "^9.1.3",
+    "slick-carousel": "^1.8.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.10"
+  }
+}

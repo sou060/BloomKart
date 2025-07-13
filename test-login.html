@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BloomKart API Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .result {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        white-space: pre-wrap;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BloomKart API Test</h1>
+
+    <div class="test-section">
+      <h2>Register Test</h2>
+      <form id="registerForm">
+        <div class="form-group">
+          <label for="regName">Name:</label>
+          <input type="text" id="regName" value="Test User" required />
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email:</label>
+          <input type="email" id="regEmail" value="test@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password:</label>
+          <input
+            type="password"
+            id="regPassword"
+            value="password123"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="regPhone">Phone:</label>
+          <input type="tel" id="regPhone" value="1234567890" />
+        </div>
+        <button type="submit">Register</button>
+      </form>
+      <div id="registerResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Login Test</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email:</label>
+          <input
+            type="email"
+            id="loginEmail"
+            value="test@example.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password:</label>
+          <input
+            type="password"
+            id="loginPassword"
+            value="password123"
+            required
+          />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test User (Admin)</h2>
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="adminEmail">Email:</label>
+          <input
+            type="email"
+            id="adminEmail"
+            value="admin@bloomkart.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="adminPassword">Password:</label>
+          <input type="password" id="adminPassword" value="admin123" required />
+        </div>
+        <button type="submit">Login as Admin</button>
+      </form>
+      <div id="adminLoginResult" class="result"></div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080/api";
+
+      function showResult(elementId, data, isSuccess = true) {
+        const element = document.getElementById(elementId);
+        element.textContent = JSON.stringify(data, null, 2);
+        element.className = `result ${isSuccess ? "success" : "error"}`;
+      }
+
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = {
+            name: document.getElementById("regName").value,
+            email: document.getElementById("regEmail").value,
+            password: document.getElementById("regPassword").value,
+            phoneNumber: document.getElementById("regPhone").value,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/auth/register`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              showResult("registerResult", data, true);
+            } else {
+              showResult("registerResult", data, false);
+            }
+          } catch (error) {
+            showResult("registerResult", { error: error.message }, false);
+          }
+        });
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = {
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              showResult("loginResult", data, true);
+              // Store tokens
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("refreshToken", data.refreshToken);
+            } else {
+              showResult("loginResult", data, false);
+            }
+          } catch (error) {
+            showResult("loginResult", { error: error.message }, false);
+          }
+        });
+
+      document
+        .getElementById("adminLoginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = {
+            email: document.getElementById("adminEmail").value,
+            password: document.getElementById("adminPassword").value,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              showResult("adminLoginResult", data, true);
+              // Store tokens
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("refreshToken", data.refreshToken);
+            } else {
+              showResult("adminLoginResult", data, false);
+            }
+          } catch (error) {
+            showResult("adminLoginResult", { error: error.message }, false);
+          }
+        });
+    </script>
+  </body>
+</html>
