@@ -1,0 +1,393 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "react-toastify/dist/ReactToastify.css";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  opacity: 0.9;
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+/* Dark mode body background */
+body.dark-mode {
+  background-color: var(--bg-primary);
+}
+
+/* User Profile Dropdown Styles */
+.user-avatar {
+  position: relative;
+}
+
+.user-avatar img {
+  object-fit: cover;
+  border: 2px solid #e9ecef;
+  transition: border-color 0.3s ease;
+}
+
+.user-avatar img:hover {
+  border-color: #007bff;
+}
+
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 0;
+  margin-top: 8px;
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.dropdown-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.dropdown-section {
+  padding: 8px 0;
+}
+
+.dropdown-section .dropdown-header {
+  background: none;
+  border: none;
+  padding: 8px 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+}
+
+.dropdown-item {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  color: #495057;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #007bff;
+  transform: translateX(4px);
+}
+
+.dropdown-item:active {
+  background: #007bff;
+  color: white;
+}
+
+.dropdown-item.text-danger:hover {
+  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  color: #dc3545;
+}
+
+.dropdown-item.text-danger:active {
+  background: #dc3545;
+  color: white;
+}
+
+.dropdown-divider {
+  margin: 8px 0;
+  border-color: #e9ecef;
+}
+
+/* Badge styles */
+.badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+}
+
+/* Modal styles for logout */
+.modal-content {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid #e9ecef;
+  padding: 20px 24px;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 20px 24px;
+  border-radius: 0 0 16px 16px;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.btn-close:hover {
+  color: #dc3545;
+}
+
+/* Card styles in logout modal */
+.card {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card.border-warning {
+  border-color: #ffc107;
+}
+
+.card.border-warning:hover {
+  border-color: #e0a800;
+  box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);
+}
+
+/* Profile Page Styles */
+.nav-pills .nav-link {
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  color: #495057;
+  background: none;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link:hover {
+  background: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.nav-pills .nav-link.active {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.card {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 16px 20px;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  opacity: 0.7;
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.btn-outline-primary {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.btn-outline-primary:hover {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.form-check-input {
+  width: 1.2em;
+  height: 1.2em;
+  border-radius: 4px;
+}
+
+.form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  border-radius: 10px;
+}
+
+.badge.bg-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+}
+
+/* Empty state styles */
+.text-center.py-5 {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    min-width: 260px;
+    max-width: 280px;
+  }
+
+  .dropdown-header {
+    padding: 12px 16px;
+  }
+
+  .dropdown-item {
+    padding: 10px 16px;
+  }
+
+  .modal-dialog {
+    margin: 1rem;
+  }
+
+  .nav-pills .nav-link {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .card-header {
+    padding: 12px 16px;
+  }
+
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Animation for dropdown */
+.dropdown-menu.show {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state styles */
+.dropdown-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alert styles */
+.alert {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  color: #0c5460;
+}
