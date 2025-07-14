@@ -26,7 +26,7 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
 
   // Hide navbar on admin pages
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith("/admin");
   if (isAdminPage) {
     return null;
   }

@@ -95,6 +95,34 @@ public class ProductService {
         return productRepository.count();
     }
 
+    public Page<Product> getProductsByCategory(String category, Pageable pageable) {
+        return productRepository.findByCategory(category, pageable);
+    }
+
+    public Page<Product> searchProducts(String search, Pageable pageable) {
+        return productRepository.findByNameContainingIgnoreCase(search, pageable);
+    }
+
+    public long getOutOfStockCount() {
+        return productRepository.countOutOfStock();
+    }
+
+    public long getLowStockCount() {
+        return productRepository.countLowStock();
+    }
+
+    public long getInStockCount() {
+        return productRepository.countInStock();
+    }
+
+    public Page<Product> getLowStockProducts(Pageable pageable) {
+        return productRepository.findLowStockProducts(pageable);
+    }
+
+    public Page<Product> getOutOfStockProducts(Pageable pageable) {
+        return productRepository.findOutOfStockProducts(pageable);
+    }
+
     private List<String> saveImages(List<MultipartFile> images) {
         try {
             Path uploadDir = Paths.get(uploadPath);

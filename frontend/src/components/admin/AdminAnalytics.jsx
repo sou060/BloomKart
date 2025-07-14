@@ -29,45 +29,44 @@ const AdminAnalytics = () => {
 
   const fetchAnalytics = async () => {
     try {
-      // In a real app, you would have analytics endpoints
-      // For now, we'll simulate the data
-      const mockAnalytics = {
-        salesData: [
-          { date: "2024-01-01", sales: 15000 },
-          { date: "2024-01-02", sales: 18000 },
-          { date: "2024-01-03", sales: 22000 },
-          { date: "2024-01-04", sales: 19000 },
-          { date: "2024-01-05", sales: 25000 },
-          { date: "2024-01-06", sales: 28000 },
-          { date: "2024-01-07", sales: 32000 },
-        ],
-        userGrowth: [
-          { month: "Jan", users: 150 },
-          { month: "Feb", users: 180 },
-          { month: "Mar", users: 220 },
-          { month: "Apr", users: 280 },
-          { month: "May", users: 320 },
-          { month: "Jun", users: 380 },
-        ],
-        topProducts: [
-          { name: "Red Roses", sales: 45, revenue: 22500 },
-          { name: "White Lilies", sales: 38, revenue: 19000 },
-          { name: "Sunflowers", sales: 32, revenue: 16000 },
-          { name: "Tulips", sales: 28, revenue: 14000 },
-          { name: "Orchids", sales: 25, revenue: 12500 },
-        ],
-        revenueStats: {
-          currentMonth: 320000,
-          previousMonth: 280000,
-          growth: 14.3,
-          averageOrder: 2400,
-          totalOrders: 133,
+      setLoading(true);
+
+      // Fetch real analytics data from backend
+      const response = await api.get(
+        `/admin/analytics/dashboard?days=${dateRange}`
+      );
+      const analyticsData = response.data;
+
+      // Transform the data to match the expected format
+      const transformedAnalytics = {
+        salesData: analyticsData.salesData?.dailySales || [],
+        userGrowth: analyticsData.userGrowth?.monthlyUsers || [],
+        topProducts: analyticsData.topProducts?.products || [],
+        revenueStats: analyticsData.revenueStats || {
+          currentMonth: 0,
+          previousMonth: 0,
+          growth: 0,
+          averageOrder: 0,
+          totalOrders: 0,
         },
       };
 
-      setAnalytics(mockAnalytics);
+      setAnalytics(transformedAnalytics);
     } catch (error) {
       console.error("Error fetching analytics:", error);
+      // Fallback to empty data if API fails
+      setAnalytics({
+        salesData: [],
+        userGrowth: [],
+        topProducts: [],
+        revenueStats: {
+          currentMonth: 0,
+          previousMonth: 0,
+          growth: 0,
+          averageOrder: 0,
+          totalOrders: 0,
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -158,7 +157,11 @@ const AdminAnalytics = () => {
             </div>
             <div className="d-flex align-items-center mt-2">
               <FaArrowUp className="text-success me-1" />
-              <small className="text-success">+12% from last month</small>
+              <small className="text-success">
+                {analytics.revenueStats.totalOrders > 0
+                  ? "+12% from last month"
+                  : "No orders yet"}
+              </small>
             </div>
           </div>
         </div>
@@ -178,7 +181,11 @@ const AdminAnalytics = () => {
             </div>
             <div className="d-flex align-items-center mt-2">
               <FaArrowUp className="text-success me-1" />
-              <small className="text-success">+8% from last month</small>
+              <small className="text-success">
+                {analytics.revenueStats.averageOrder > 0
+                  ? "+8% from last month"
+                  : "No orders yet"}
+              </small>
             </div>
           </div>
         </div>
@@ -187,8 +194,13 @@ const AdminAnalytics = () => {
           <div className="admin-stat-card">
             <div className="d-flex align-items-center justify-content-between">
               <div>
-                <div className="admin-stat-number text-warning">1,250</div>
-                <div className="admin-stat-label">Active Users</div>
+                <div className="admin-stat-number text-warning">
+                  {analytics.userGrowth.length > 0
+                    ? analytics.userGrowth[analytics.userGrowth.length - 1]
+                        .users
+                    : 0}
+                </div>
+                <div className="admin-stat-label">Total Users</div>
               </div>
               <div className="admin-stat-icon bg-gradient-secondary text-white">
                 <FaUsers size={24} />
@@ -196,7 +208,19 @@ const AdminAnalytics = () => {
             </div>
             <div className="d-flex align-items-center mt-2">
               <FaArrowUp className="text-success me-1" />
-              <small className="text-success">+15% from last month</small>
+              <small className="text-success">
+                {analytics.userGrowth.length > 1
+                  ? `+${Math.round(
+                      ((analytics.userGrowth[analytics.userGrowth.length - 1]
+                        .users -
+                        analytics.userGrowth[analytics.userGrowth.length - 2]
+                          .users) /
+                        analytics.userGrowth[analytics.userGrowth.length - 2]
+                          .users) *
+                        100
+                    )}% from last month`
+                  : "New this month"}
+              </small>
             </div>
           </div>
         </div>
@@ -255,7 +279,9 @@ const AdminAnalytics = () => {
                           <div className="fw-semibold">{product.name}</div>
                         </td>
                         <td>
-                          <span className="badge bg-primary">{product.sales}</span>
+                          <span className="badge bg-primary">
+                            {product.sales}
+                          </span>
                         </td>
                         <td>
                           <small className="text-success fw-semibold">
@@ -357,4 +383,4 @@ const AdminAnalytics = () => {
   );
 };
 
-export default AdminAnalytics; 
+export default AdminAnalytics;

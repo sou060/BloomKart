@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BloomKart - Real Data Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      h2 {
+        color: #34495e;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 5px;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+      .admin-info {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        border-left: 4px solid #ffc107;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🌺 BloomKart - Real Data Setup</h1>
+
+    <div class="admin-info">
+      <h3>🔑 Admin Access</h3>
+      <p><strong>Email:</strong> admin@bloomkart.com</p>
+      <p><strong>Password:</strong> admin123</p>
+      <p>
+        Use these credentials to access the admin panel at:
+        <a href="http://localhost:5173/admin" target="_blank"
+          >http://localhost:5173/admin</a
+        >
+      </p>
+    </div>
+
+    <div class="container">
+      <h2>👤 Register New User</h2>
+      <form id="registerForm">
+        <div class="form-group">
+          <label for="name">Full Name:</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone Number:</label>
+          <input type="tel" id="phone" name="phone" required />
+        </div>
+        <button type="submit">Register User</button>
+      </form>
+      <div id="registerResult"></div>
+    </div>
+
+    <div class="container">
+      <h2>🔐 Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email:</label>
+          <input type="email" id="loginEmail" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password:</label>
+          <input type="password" id="loginPassword" name="password" required />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      <div id="loginResult"></div>
+    </div>
+
+    <div class="container">
+      <h2>📊 Check Current Data</h2>
+      <button onclick="checkUsers()">Check Users</button>
+      <button onclick="checkProducts()">Check Products</button>
+      <button onclick="checkOrders()">Check Orders</button>
+      <div id="dataResult"></div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8080/api";
+
+      // Register new user
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const userData = {
+            name: formData.get("name"),
+            email: formData.get("email"),
+            password: formData.get("password"),
+            phoneNumber: formData.get("phone"),
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/auth/register`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(userData),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("registerResult");
+
+            if (response.ok) {
+              resultDiv.innerHTML = `<div class="success">✅ User registered successfully! ID: ${result.id}</div>`;
+              e.target.reset();
+            } else {
+              resultDiv.innerHTML = `<div class="error">❌ Registration failed: ${
+                result.message || "Unknown error"
+              }</div>`;
+            }
+          } catch (error) {
+            document.getElementById(
+              "registerResult"
+            ).innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+          }
+        });
+
+      // Login
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const loginData = {
+            email: formData.get("email"),
+            password: formData.get("password"),
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(loginData),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("loginResult");
+
+            if (response.ok) {
+              resultDiv.innerHTML = `<div class="success">✅ Login successful! Token: ${result.token.substring(
+                0,
+                50
+              )}...</div>`;
+              localStorage.setItem("token", result.token);
+              localStorage.setItem("user", JSON.stringify(result.user));
+            } else {
+              resultDiv.innerHTML = `<div class="error">❌ Login failed: ${
+                result.message || "Unknown error"
+              }</div>`;
+            }
+          } catch (error) {
+            document.getElementById(
+              "loginResult"
+            ).innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+          }
+        });
+
+      // Check users
+      async function checkUsers() {
+        try {
+          const response = await fetch(`${API_BASE}/admin/users`);
+          const users = await response.json();
+          document.getElementById("dataResult").innerHTML = `
+                    <div class="success">
+                        <h4>👥 Users (${users.length})</h4>
+                        <pre>${JSON.stringify(users, null, 2)}</pre>
+                    </div>
+                `;
+        } catch (error) {
+          document.getElementById(
+            "dataResult"
+          ).innerHTML = `<div class="error">❌ Error fetching users: ${error.message}</div>`;
+        }
+      }
+
+      // Check products
+      async function checkProducts() {
+        try {
+          const response = await fetch(`${API_BASE}/products`);
+          const products = await response.json();
+          document.getElementById("dataResult").innerHTML = `
+                    <div class="success">
+                        <h4>🌺 Products (${products.length})</h4>
+                        <pre>${JSON.stringify(products, null, 2)}</pre>
+                    </div>
+                `;
+        } catch (error) {
+          document.getElementById(
+            "dataResult"
+          ).innerHTML = `<div class="error">❌ Error fetching products: ${error.message}</div>`;
+        }
+      }
+
+      // Check orders
+      async function checkOrders() {
+        try {
+          const response = await fetch(`${API_BASE}/admin/orders`);
+          const orders = await response.json();
+          document.getElementById("dataResult").innerHTML = `
+                    <div class="success">
+                        <h4>📦 Orders (${orders.length})</h4>
+                        <pre>${JSON.stringify(orders, null, 2)}</pre>
+                    </div>
+                `;
+        } catch (error) {
+          document.getElementById(
+            "dataResult"
+          ).innerHTML = `<div class="error">❌ Error fetching orders: ${error.message}</div>`;
+        }
+      }
+    </script>
+  </body>
+</html>

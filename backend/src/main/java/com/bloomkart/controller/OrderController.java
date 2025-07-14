@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -62,5 +63,49 @@ public class OrderController {
         paymentService.processPaymentSuccess(orderId, paymentId, signature);
         
         return ResponseEntity.ok(Map.of("message", "Payment verified successfully"));
+    }
+
+    @GetMapping("/{id}/payment-status")
+    public ResponseEntity<Map<String, String>> getPaymentStatus(@PathVariable Long id) {
+        Order order = orderService.getUserOrderById(id, authService.getCurrentUser());
+        return ResponseEntity.ok(Map.of(
+            "status", order.getPaymentStatus().toString(),
+            "paymentId", order.getPaymentId() != null ? order.getPaymentId() : ""
+        ));
+    }
+
+    @PostMapping("/{id}/refund")
+    public ResponseEntity<Map<String, String>> requestRefund(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> refundData) {
+        Long orderId = id;
+        BigDecimal amount = new BigDecimal(refundData.get("amount"));
+        String reason = refundData.get("reason");
+
+        // Update order status to indicate refund request
+        orderService.updateOrderStatus(orderId, Order.OrderStatus.CANCELLED);
+        
+        return ResponseEntity.ok(Map.of("message", "Refund request submitted successfully"));
+    }
+
+    @GetMapping("/payment-history")
+    public ResponseEntity<List<Map<String, Object>>> getPaymentHistory() {
+        User currentUser = authService.getCurrentUser();
+        List<Order> orders = orderService.getUserOrders(currentUser);
+        
+        List<Map<String, Object>> paymentHistory = orders.stream()
+            .map(order -> {
+                Map<String, Object> payment = Map.of(
+                    "id", order.getId(),
+                    "orderId", order.getId(),
+                    "amount", order.getTotalAmount(),
+                    "paymentMethod", "Razorpay",
+                    "status", order.getPaymentStatus().toString()
+                );
+                return payment;
+            })
+            .toList();
+        
+        return ResponseEntity.ok(paymentHistory);
     }
 } 

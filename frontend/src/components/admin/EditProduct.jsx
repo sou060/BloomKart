@@ -28,16 +28,16 @@ const EditProduct = () => {
 
   const fetchProduct = async () => {
     try {
-      const response = await api.get(`/products/${id}`);
+      const response = await api.get(`/admin/products/${id}`);
       const product = response.data;
       setFormData({
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        stockQuantity: product.stockQuantity,
-        isFresh: product.isFresh,
-        isFeatured: product.isFeatured,
+        name: product.name || "",
+        description: product.description || "",
+        price: product.price || "",
+        category: product.category || "",
+        stockQuantity: product.stockQuantity || "",
+        isFresh: product.isFresh ?? false,
+        isFeatured: product.isFeatured ?? false,
       });
       setExistingImages(product.images || []);
     } catch (error) {
@@ -96,7 +96,7 @@ const EditProduct = () => {
         formDataToSend.append("newImages", image);
       });
 
-      await api.put(`/products/${id}`, formDataToSend, {
+      await api.put(`/admin/products/${id}`, formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

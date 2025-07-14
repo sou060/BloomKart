@@ -2,14 +2,17 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import api from "../axios";
 import { toast } from "react-toastify";
 import {
   FaCreditCard,
   FaMapMarkerAlt,
   FaPhone,
   FaEnvelope,
+  FaShieldAlt,
+  FaLock,
+  FaCheckCircle,
 } from "react-icons/fa";
+import paymentService from "../services/paymentService";
 
 const Checkout = () => {
   const { cart, clearCart } = useContext(CartContext);
@@ -47,7 +50,7 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Create order
+      // Validate form data
       const orderData = {
         deliveryDetails,
         items: cart.map((item) => ({
@@ -58,48 +61,31 @@ const Checkout = () => {
         totalAmount: calculateTotal(),
       };
 
-      const orderResponse = await api.post("/orders", orderData);
-      const order = orderResponse.data;
+      // Validate payment data
+      const validationErrors = paymentService.validatePaymentData(orderData);
+      if (validationErrors.length > 0) {
+        validationErrors.forEach((error) => toast.error(error));
+        return;
+      }
 
-      // Initialize Razorpay payment
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: calculateTotal() * 100, // Razorpay expects amount in paise
-        currency: "INR",
-        name: "BloomKart",
-        description: "Flower Purchase",
-        order_id: order.paymentOrderId,
-        handler: async (response) => {
-          try {
-            // Verify payment
-            await api.post("/orders/verify-payment", {
-              orderId: order.id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-            });
-
-            toast.success("Payment successful! Order placed successfully.");
-            clearCart();
-            navigate(`/orders/${order.id}`);
-          } catch (error) {
-            toast.error("Payment verification failed");
-          }
+      // Initialize payment using payment service
+      await paymentService.initializePayment(
+        orderData,
+        user,
+        (order, response) => {
+          // Payment success callback
+          toast.success("Payment successful! Order placed successfully.");
+          clearCart();
+          navigate(`/orders/${order.id}`);
         },
-        prefill: {
-          name: user.name,
-          email: user.email,
-          contact: deliveryDetails.phoneNumber,
-        },
-        theme: {
-          color: "#e91e63",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        (error) => {
+          // Payment failure callback
+          toast.error(error || "Payment failed");
+        }
+      );
     } catch (error) {
-      console.error("Error creating order:", error);
-      toast.error("Failed to create order");
+      console.error("Error processing payment:", error);
+      toast.error("Failed to process payment");
     } finally {
       setLoading(false);
     }
@@ -292,6 +278,21 @@ const Checkout = () => {
               >
                 {loading ? "Processing..." : "Proceed to Payment"}
               </button>
+
+              {/* Security Notice */}
+              <div className="mt-3 p-3 bg-light rounded">
+                <div className="d-flex align-items-center mb-2">
+                  <FaShieldAlt className="text-success me-2" />
+                  <small className="text-muted fw-bold">Secure Payment</small>
+                </div>
+                <div className="d-flex align-items-center">
+                  <FaLock className="text-primary me-2" />
+                  <small className="text-muted">
+                    Your payment information is encrypted and secure. Powered by
+                    Razorpay.
+                  </small>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -47,83 +47,34 @@ const AdminInventory = () => {
 
   const fetchInventory = async () => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const mockInventory = [
-        {
-          id: 1,
-          name: "Red Roses",
-          category: "Roses",
-          currentStock: 45,
-          minStock: 50,
-          maxStock: 200,
-          unitPrice: 500,
-          supplier: "Rose Garden Ltd",
-          lastUpdated: "2024-01-15",
-          status: "low",
-          location: "Warehouse A",
-          sku: "ROSE-001",
-        },
-        {
-          id: 2,
-          name: "White Lilies",
-          category: "Lilies",
-          currentStock: 120,
-          minStock: 30,
-          maxStock: 150,
-          unitPrice: 400,
-          supplier: "Lily Farm Co",
-          lastUpdated: "2024-01-14",
-          status: "normal",
-          location: "Warehouse B",
-          sku: "LILY-002",
-        },
-        {
-          id: 3,
-          name: "Sunflowers",
-          category: "Sunflowers",
-          currentStock: 200,
-          minStock: 40,
-          maxStock: 300,
-          unitPrice: 300,
-          supplier: "Sunny Fields",
-          lastUpdated: "2024-01-13",
-          status: "normal",
-          location: "Warehouse A",
-          sku: "SUN-003",
-        },
-        {
-          id: 4,
-          name: "Tulips",
-          category: "Tulips",
-          currentStock: 25,
-          minStock: 50,
-          maxStock: 100,
-          unitPrice: 350,
-          supplier: "Tulip World",
-          lastUpdated: "2024-01-12",
-          status: "low",
-          location: "Warehouse C",
-          sku: "TULIP-004",
-        },
-        {
-          id: 5,
-          name: "Orchids",
-          category: "Orchids",
-          currentStock: 15,
-          minStock: 20,
-          maxStock: 80,
-          unitPrice: 800,
-          supplier: "Orchid Paradise",
-          lastUpdated: "2024-01-11",
-          status: "critical",
-          location: "Warehouse B",
-          sku: "ORCHID-005",
-        },
-      ];
+      setLoading(true);
 
-      setInventory(mockInventory);
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters.category) params.append("category", filters.category);
+      if (filters.search) params.append("search", filters.search);
+      params.append("page", "0");
+      params.append("size", "100"); // Get more items for inventory view
+
+      const response = await api.get(`/admin/inventory?${params}`);
+      const products = response.data.content || response.data;
+
+      // Use real product data with minimal transformation
+      const inventoryData = products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        currentStock: product.stockQuantity || 0,
+        unitPrice: product.price,
+        lastUpdated: product.updatedAt
+          ? new Date(product.updatedAt).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        status: getStockStatus(product.stockQuantity || 0),
+        mainImage: product.mainImage,
+        images: product.images,
+      }));
+
+      setInventory(inventoryData);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       toast.error("Failed to load inventory");
@@ -134,26 +85,43 @@ const AdminInventory = () => {
 
   const handleStockAdjustment = async (itemId, adjustment) => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      setInventory(prev => prev.map(item => {
-        if (item.id === itemId) {
-          const newStock = adjustment.type === "add" 
-            ? item.currentStock + parseInt(adjustment.quantity)
-            : item.currentStock - parseInt(adjustment.quantity);
-          
-          return {
-            ...item,
-            currentStock: Math.max(0, newStock),
-            lastUpdated: new Date().toISOString().split('T')[0],
-            status: getStockStatus(Math.max(0, newStock), item.minStock),
-          };
-        }
-        return item;
-      }));
+      const newQuantity =
+        adjustment.type === "add"
+          ? parseInt(adjustment.quantity)
+          : -parseInt(adjustment.quantity);
 
-      toast.success(`Stock ${adjustment.type === "add" ? "added" : "removed"} successfully`);
+      // Get current product
+      const currentItem = inventory.find((item) => item.id === itemId);
+      if (!currentItem) {
+        toast.error("Product not found");
+        return;
+      }
+
+      const updatedStock = Math.max(0, currentItem.currentStock + newQuantity);
+
+      // Update stock via API
+      await api.put(`/admin/inventory/${itemId}/stock`, {
+        stockQuantity: updatedStock,
+      });
+
+      // Update local state
+      setInventory((prev) =>
+        prev.map((item) => {
+          if (item.id === itemId) {
+            return {
+              ...item,
+              currentStock: updatedStock,
+              lastUpdated: new Date().toISOString().split("T")[0],
+              status: getStockStatus(updatedStock),
+            };
+          }
+          return item;
+        })
+      );
+
+      toast.success(
+        `Stock ${adjustment.type === "add" ? "added" : "removed"} successfully`
+      );
       setStockAdjustment({ quantity: "", reason: "", type: "add" });
       setEditingItem(null);
     } catch (error) {
@@ -162,10 +130,10 @@ const AdminInventory = () => {
     }
   };
 
-  const getStockStatus = (current, min) => {
+  const getStockStatus = (current) => {
     if (current === 0) return "out";
-    if (current <= min * 0.5) return "critical";
-    if (current <= min) return "low";
+    if (current <= 10 * 0.5) return "critical";
+    if (current <= 10) return "low";
     return "normal";
   };
 
@@ -208,14 +176,36 @@ const AdminInventory = () => {
     try {
       switch (bulkAction) {
         case "export":
+          // Export selected items
+          const selectedInventory = inventory.filter((item) =>
+            selectedItems.includes(item.id)
+          );
+          const csvContent = convertToCSV(selectedInventory);
+          downloadCSV(csvContent, "inventory-export.csv");
           toast.success("Inventory exported successfully!");
           break;
         case "update":
+          // Bulk update stock (example: add 10 to all selected items)
+          for (const itemId of selectedItems) {
+            const currentItem = inventory.find((item) => item.id === itemId);
+            if (currentItem) {
+              await api.put(`/admin/inventory/${itemId}/stock`, {
+                stockQuantity: currentItem.currentStock + 10,
+              });
+            }
+          }
+          await fetchInventory(); // Refresh data
           toast.success("Selected items updated successfully!");
           break;
         case "delete":
-          if (window.confirm("Are you sure you want to delete selected items?")) {
-            setInventory(prev => prev.filter(item => !selectedItems.includes(item.id)));
+          if (
+            window.confirm("Are you sure you want to delete selected items?")
+          ) {
+            // Delete products via API
+            for (const itemId of selectedItems) {
+              await api.delete(`/admin/products/${itemId}`);
+            }
+            await fetchInventory(); // Refresh data
             setSelectedItems([]);
             toast.success("Selected items deleted successfully!");
           }
@@ -230,9 +220,47 @@ const AdminInventory = () => {
     }
   };
 
+  const convertToCSV = (data) => {
+    const headers = [
+      "ID",
+      "Name",
+      "Category",
+      "Current Stock",
+      "Unit Price",
+      "Status",
+      "Last Updated",
+    ];
+    const csvRows = [headers.join(",")];
+
+    data.forEach((item) => {
+      const row = [
+        item.id,
+        `"${item.name}"`,
+        item.category,
+        item.currentStock,
+        item.unitPrice,
+        item.status,
+        item.lastUpdated,
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    return csvRows.join("\n");
+  };
+
+  const downloadCSV = (content, filename) => {
+    const blob = new Blob([content], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedItems(inventory.map(item => item.id));
+      setSelectedItems(inventory.map((item) => item.id));
     } else {
       setSelectedItems([]);
     }
@@ -240,30 +268,35 @@ const AdminInventory = () => {
 
   const handleSelectItem = (itemId, checked) => {
     if (checked) {
-      setSelectedItems(prev => [...prev, itemId]);
+      setSelectedItems((prev) => [...prev, itemId]);
     } else {
-      setSelectedItems(prev => prev.filter(id => id !== itemId));
+      setSelectedItems((prev) => prev.filter((id) => id !== itemId));
     }
   };
 
   const filteredInventory = inventory
-    .filter(item => {
+    .filter((item) => {
       if (filters.category && item.category !== filters.category) return false;
-      if (filters.stockLevel && item.status !== filters.stockLevel) return false;
+      if (filters.stockLevel && item.status !== filters.stockLevel)
+        return false;
       if (filters.status && item.status !== filters.status) return false;
-      if (filters.search && !item.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      if (
+        filters.search &&
+        !item.name.toLowerCase().includes(filters.search.toLowerCase())
+      )
+        return false;
       if (showLowStock && item.status === "normal") return false;
       return true;
     })
     .sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
-      
+
       if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
-      
+
       if (sortOrder === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -278,7 +311,8 @@ const AdminInventory = () => {
         <div className="col-md-8">
           <h1 className="text-gradient fw-bold mb-2">Inventory Management</h1>
           <p className="text-muted mb-0">
-            Manage product inventory, track stock levels, and handle stock adjustments
+            Manage product inventory, track stock levels, and handle stock
+            adjustments
           </p>
         </div>
         <div className="col-md-4 text-md-end">
@@ -333,16 +367,20 @@ const AdminInventory = () => {
                   className="form-control"
                   placeholder="Search products..."
                   value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
                 />
               </div>
             </div>
-            
+
             <div className="col-md-2">
               <select
                 className="form-select"
                 value={filters.category}
-                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, category: e.target.value }))
+                }
               >
                 <option value="">All Categories</option>
                 <option value="Roses">Roses</option>
@@ -352,12 +390,17 @@ const AdminInventory = () => {
                 <option value="Orchids">Orchids</option>
               </select>
             </div>
-            
+
             <div className="col-md-2">
               <select
                 className="form-select"
                 value={filters.stockLevel}
-                onChange={(e) => setFilters(prev => ({ ...prev, stockLevel: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    stockLevel: e.target.value,
+                  }))
+                }
               >
                 <option value="">All Stock Levels</option>
                 <option value="normal">Normal</option>
@@ -366,7 +409,7 @@ const AdminInventory = () => {
                 <option value="out">Out of Stock</option>
               </select>
             </div>
-            
+
             <div className="col-md-2">
               <select
                 className="form-select"
@@ -379,7 +422,7 @@ const AdminInventory = () => {
                 <option value="lastUpdated">Last Updated</option>
               </select>
             </div>
-            
+
             <div className="col-md-2">
               <select
                 className="form-select"
@@ -390,7 +433,7 @@ const AdminInventory = () => {
                 <option value="desc">Descending</option>
               </select>
             </div>
-            
+
             <div className="col-md-1">
               <button className="btn btn-outline-secondary w-100">
                 <FaSort />
@@ -460,17 +503,17 @@ const AdminInventory = () => {
                         type="checkbox"
                         className="form-check-input"
                         onChange={(e) => handleSelectAll(e.target.checked)}
-                        checked={selectedItems.length === filteredInventory.length && filteredInventory.length > 0}
+                        checked={
+                          selectedItems.length === filteredInventory.length &&
+                          filteredInventory.length > 0
+                        }
                       />
                     </th>
                     <th>Product</th>
-                    <th>SKU</th>
                     <th>Category</th>
                     <th>Current Stock</th>
-                    <th>Min Stock</th>
                     <th>Status</th>
                     <th>Unit Price</th>
-                    <th>Location</th>
                     <th>Last Updated</th>
                     <th>Actions</th>
                   </tr>
@@ -483,39 +526,63 @@ const AdminInventory = () => {
                           type="checkbox"
                           className="form-check-input"
                           checked={selectedItems.includes(item.id)}
-                          onChange={(e) => handleSelectItem(item.id, e.target.checked)}
+                          onChange={(e) =>
+                            handleSelectItem(item.id, e.target.checked)
+                          }
                         />
                       </td>
                       <td>
-                        <div className="fw-semibold">{item.name}</div>
-                        <small className="text-muted">{item.supplier}</small>
-                      </td>
-                      <td>
-                        <span className="badge bg-light text-dark">{item.sku}</span>
+                        <div className="d-flex align-items-center">
+                          <img
+                            src={`http://localhost:8080/api${item.mainImage || item.images?.[0] || ''}`}
+                            alt={item.name}
+                            className="rounded me-3"
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <div>
+                            <div className="fw-semibold">{item.name}</div>
+                            <small className="text-muted">ID: {item.id}</small>
+                          </div>
+                        </div>
                       </td>
                       <td>{item.category}</td>
                       <td>
                         <div className="d-flex align-items-center">
-                          <span className="fw-semibold me-2">{item.currentStock}</span>
-                          <div className="progress flex-grow-1" style={{ height: "6px" }}>
+                          <span className="fw-semibold me-2">
+                            {item.currentStock}
+                          </span>
+                          <div
+                            className="progress flex-grow-1"
+                            style={{ height: "6px" }}
+                          >
                             <div
-                              className={`progress-bar bg-${getStatusColor(item.status)}`}
-                              style={{ width: `${(item.currentStock / item.maxStock) * 100}%` }}
+                              className={`progress-bar bg-${getStatusColor(
+                                item.status
+                              )}`}
+                              style={{
+                                width: `${Math.min((item.currentStock / 100) * 100, 100)}%`,
+                              }}
                             />
                           </div>
                         </div>
                       </td>
-                      <td>{item.minStock}</td>
                       <td>
                         <div className="d-flex align-items-center">
                           {getStatusIcon(item.status)}
-                          <span className={`badge bg-${getStatusColor(item.status)} ms-2`}>
+                          <span
+                            className={`badge bg-${getStatusColor(
+                              item.status
+                            )} ms-2`}
+                          >
                             {item.status.toUpperCase()}
                           </span>
                         </div>
                       </td>
                       <td className="fw-semibold">₹{item.unitPrice}</td>
-                      <td>{item.location}</td>
                       <td>
                         <small className="text-muted">
                           {new Date(item.lastUpdated).toLocaleDateString()}
@@ -555,17 +622,26 @@ const AdminInventory = () => {
 
       {/* Stock Adjustment Modal */}
       {editingItem && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Adjust Stock - {editingItem.name}</h5>
+                <h5 className="modal-title">
+                  Adjust Stock - {editingItem.name}
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
                   onClick={() => {
                     setEditingItem(null);
-                    setStockAdjustment({ quantity: "", reason: "", type: "add" });
+                    setStockAdjustment({
+                      quantity: "",
+                      reason: "",
+                      type: "add",
+                    });
                   }}
                 />
               </div>
@@ -585,7 +661,12 @@ const AdminInventory = () => {
                     <select
                       className="form-select"
                       value={stockAdjustment.type}
-                      onChange={(e) => setStockAdjustment(prev => ({ ...prev, type: e.target.value }))}
+                      onChange={(e) =>
+                        setStockAdjustment((prev) => ({
+                          ...prev,
+                          type: e.target.value,
+                        }))
+                      }
                     >
                       <option value="add">Add Stock</option>
                       <option value="remove">Remove Stock</option>
@@ -597,7 +678,12 @@ const AdminInventory = () => {
                       type="number"
                       className="form-control"
                       value={stockAdjustment.quantity}
-                      onChange={(e) => setStockAdjustment(prev => ({ ...prev, quantity: e.target.value }))}
+                      onChange={(e) =>
+                        setStockAdjustment((prev) => ({
+                          ...prev,
+                          quantity: e.target.value,
+                        }))
+                      }
                       min="1"
                     />
                   </div>
@@ -607,7 +693,12 @@ const AdminInventory = () => {
                       className="form-control"
                       rows="3"
                       value={stockAdjustment.reason}
-                      onChange={(e) => setStockAdjustment(prev => ({ ...prev, reason: e.target.value }))}
+                      onChange={(e) =>
+                        setStockAdjustment((prev) => ({
+                          ...prev,
+                          reason: e.target.value,
+                        }))
+                      }
                       placeholder="Enter reason for stock adjustment..."
                     />
                   </div>
@@ -619,7 +710,11 @@ const AdminInventory = () => {
                   className="btn btn-secondary"
                   onClick={() => {
                     setEditingItem(null);
-                    setStockAdjustment({ quantity: "", reason: "", type: "add" });
+                    setStockAdjustment({
+                      quantity: "",
+                      reason: "",
+                      type: "add",
+                    });
                   }}
                 >
                   Cancel
@@ -627,8 +722,12 @@ const AdminInventory = () => {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => handleStockAdjustment(editingItem.id, stockAdjustment)}
-                  disabled={!stockAdjustment.quantity || !stockAdjustment.reason}
+                  onClick={() =>
+                    handleStockAdjustment(editingItem.id, stockAdjustment)
+                  }
+                  disabled={
+                    !stockAdjustment.quantity || !stockAdjustment.reason
+                  }
                 >
                   Update Stock
                 </button>
@@ -641,4 +740,4 @@ const AdminInventory = () => {
   );
 };
 
-export default AdminInventory; 
+export default AdminInventory;

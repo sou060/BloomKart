@@ -16,11 +16,16 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get(`/products?page=${currentPage}&size=10`);
+      console.log("Fetching products from admin endpoint...");
+      const response = await api.get(
+        `/admin/products?page=${currentPage}&size=10`
+      );
+      console.log("Products response:", response.data);
       setProducts(response.data.content);
       setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error("Error fetching products:", error);
+      console.error("Error details:", error.response?.data);
       toast.error("Failed to load products");
     } finally {
       setLoading(false);
@@ -30,7 +35,7 @@ const AdminProducts = () => {
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await api.delete(`/products/${productId}`);
+        await api.delete(`/admin/products/${productId}`);
         toast.success("Product deleted successfully");
         fetchProducts();
       } catch (error) {
@@ -79,7 +84,7 @@ const AdminProducts = () => {
                     <tr key={product.id}>
                       <td>
                         <img
-                          src={product.mainImage || product.images[0]}
+                          src={`http://localhost:8080/api${product.mainImage || product.images[0]}`}
                           alt={product.name}
                           style={{
                             width: "50px",
@@ -109,7 +114,7 @@ const AdminProducts = () => {
                       </td>
                       <td>
                         <Link
-                          to={`/admin/products/edit/${product.id}`}
+                          to={`/admin/products/${product.id}/edit`}
                           className="btn btn-outline-primary btn-sm me-2"
                         >
                           <FaEdit />

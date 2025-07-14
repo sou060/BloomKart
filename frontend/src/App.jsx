@@ -12,7 +12,9 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import Profile from "./pages/Profile";
 import Addresses from "./pages/Addresses";
-import LogoutTest from "./components/LogoutTest";
+import PaymentMethods from "./components/PaymentMethods";
+import PaymentHistory from "./components/PaymentHistory";
+
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminDashboard from "./components/admin/AdminDashboard";
@@ -28,6 +30,7 @@ import AdminOrderDetail from "./components/admin/AdminOrderDetail";
 import AdminReports from "./components/admin/AdminReports";
 import AdminInventory from "./components/admin/AdminInventory";
 import AdminNotifications from "./components/admin/AdminNotifications";
+import AdminTest from "./components/admin/AdminTest";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -88,13 +91,22 @@ function App() {
                 }
               />
               <Route
-                path="/logout-test"
+                path="/payment-methods"
                 element={
                   <ProtectedRoute>
-                    <LogoutTest />
+                    <PaymentMethods />
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/payment-history"
+                element={
+                  <ProtectedRoute>
+                    <PaymentHistory />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Admin routes */}
               <Route
                 path="/admin"
@@ -212,6 +224,16 @@ function App() {
                   <AdminRoute>
                     <AdminLayout>
                       <AdminNotifications />
+                    </AdminLayout>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/test"
+                element={
+                  <AdminRoute>
+                    <AdminLayout>
+                      <AdminTest />
                     </AdminLayout>
                   </AdminRoute>
                 }

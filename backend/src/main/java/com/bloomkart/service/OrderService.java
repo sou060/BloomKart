@@ -100,7 +100,8 @@ public class OrderService {
     }
 
     public BigDecimal getTotalRevenue() {
-        return orderRepository.getTotalRevenueSince(java.time.LocalDateTime.now().minusDays(30));
+        BigDecimal revenue = orderRepository.getTotalRevenue();
+        return revenue != null ? revenue : BigDecimal.ZERO;
     }
 
     public long getRecentOrderCount() {

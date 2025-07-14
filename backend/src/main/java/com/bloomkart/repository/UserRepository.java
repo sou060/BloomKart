@@ -26,4 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u WHERE u.name LIKE %:searchTerm% OR u.email LIKE %:searchTerm%")
     List<User> searchUsers(@Param("searchTerm") String searchTerm);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt <= :date")
+    long countUsersRegisteredBefore(@Param("date") java.time.LocalDateTime date);
 } 

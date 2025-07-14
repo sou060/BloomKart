@@ -15,14 +15,20 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log("Fetching users...");
       const response = await api.get(
         `/admin/users?page=${currentPage}&size=10`
       );
+      console.log("Users response:", response.data);
       setUsers(response.data.content);
       setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast.error("Failed to load users");
+      console.error("Error details:", error.response?.data);
+      toast.error(
+        "Failed to load users: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -31,22 +37,34 @@ const AdminUsers = () => {
   const handleDelete = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
+        console.log("Deleting user:", userId);
         await api.delete(`/admin/users/${userId}`);
         toast.success("User deleted successfully");
         fetchUsers();
       } catch (error) {
-        toast.error("Failed to delete user");
+        console.error("Error deleting user:", error);
+        console.error("Error details:", error.response?.data);
+        toast.error(
+          "Failed to delete user: " +
+            (error.response?.data?.message || error.message)
+        );
       }
     }
   };
 
   const handleRoleUpdate = async (userId, newRole) => {
     try {
+      console.log("Updating user role:", userId, "to", newRole);
       await api.put(`/admin/users/${userId}/role`, { role: newRole });
       toast.success("User role updated successfully");
       fetchUsers();
     } catch (error) {
-      toast.error("Failed to update user role");
+      console.error("Error updating user role:", error);
+      console.error("Error details:", error.response?.data);
+      toast.error(
+        "Failed to update user role: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
 

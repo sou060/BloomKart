@@ -60,7 +60,7 @@ const AddProduct = () => {
         formDataToSend.append("images", image);
       });
 
-      await api.post("/products", formDataToSend, {
+      await api.post("/admin/products", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

@@ -42,107 +42,44 @@ const AdminReports = () => {
   const generateReport = async () => {
     setLoading(true);
     try {
-      // Simulate API call for reports
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      let reportData = {};
 
-      const mockReports = {
-        salesReport: [
-          { date: "2024-01-01", orders: 15, revenue: 45000, avgOrder: 3000 },
-          { date: "2024-01-02", orders: 18, revenue: 54000, avgOrder: 3000 },
-          { date: "2024-01-03", orders: 22, revenue: 66000, avgOrder: 3000 },
-          { date: "2024-01-04", orders: 19, revenue: 57000, avgOrder: 3000 },
-          { date: "2024-01-05", orders: 25, revenue: 75000, avgOrder: 3000 },
-          { date: "2024-01-06", orders: 28, revenue: 84000, avgOrder: 3000 },
-          { date: "2024-01-07", orders: 32, revenue: 96000, avgOrder: 3000 },
-        ],
-        userReport: [
-          {
-            month: "Jan",
-            newUsers: 150,
-            activeUsers: 1200,
-            totalRevenue: 450000,
-          },
-          {
-            month: "Feb",
-            newUsers: 180,
-            activeUsers: 1350,
-            totalRevenue: 520000,
-          },
-          {
-            month: "Mar",
-            newUsers: 220,
-            activeUsers: 1500,
-            totalRevenue: 580000,
-          },
-          {
-            month: "Apr",
-            newUsers: 280,
-            activeUsers: 1680,
-            totalRevenue: 650000,
-          },
-          {
-            month: "May",
-            newUsers: 320,
-            activeUsers: 1850,
-            totalRevenue: 720000,
-          },
-          {
-            month: "Jun",
-            newUsers: 380,
-            activeUsers: 2000,
-            totalRevenue: 800000,
-          },
-        ],
-        productReport: [
-          {
-            name: "Red Roses",
-            sales: 450,
-            revenue: 225000,
-            rating: 4.8,
-            stock: 150,
-          },
-          {
-            name: "White Lilies",
-            sales: 380,
-            revenue: 190000,
-            rating: 4.6,
-            stock: 120,
-          },
-          {
-            name: "Sunflowers",
-            sales: 320,
-            revenue: 160000,
-            rating: 4.7,
-            stock: 200,
-          },
-          {
-            name: "Tulips",
-            sales: 280,
-            revenue: 140000,
-            rating: 4.5,
-            stock: 80,
-          },
-          {
-            name: "Orchids",
-            sales: 250,
-            revenue: 125000,
-            rating: 4.9,
-            stock: 60,
-          },
-        ],
-        locationReport: [
-          { city: "Mumbai", orders: 450, revenue: 1350000, customers: 380 },
-          { city: "Delhi", orders: 380, revenue: 1140000, customers: 320 },
-          { city: "Bangalore", orders: 320, revenue: 960000, customers: 280 },
-          { city: "Chennai", orders: 280, revenue: 840000, customers: 240 },
-          { city: "Kolkata", orders: 250, revenue: 750000, customers: 200 },
-        ],
-      };
+      switch (reportType) {
+        case "sales":
+          const salesResponse = await api.get(
+            `/admin/reports/sales?days=${dateRange}`
+          );
+          reportData = salesResponse.data;
+          break;
+        case "users":
+          const usersResponse = await api.get("/admin/reports/users");
+          reportData = usersResponse.data;
+          break;
+        case "products":
+          const productsResponse = await api.get("/admin/reports/products");
+          reportData = productsResponse.data;
+          break;
+        case "locations":
+          const locationsResponse = await api.get("/admin/reports/locations");
+          reportData = locationsResponse.data;
+          break;
+        default:
+          const dashboardResponse = await api.get("/admin/reports/dashboard");
+          reportData = dashboardResponse.data;
+          break;
+      }
 
-      setReports(mockReports);
+      setReports(reportData);
     } catch (error) {
       console.error("Error generating report:", error);
       toast.error("Failed to generate report");
+      // Set empty data on error
+      setReports({
+        salesReport: [],
+        userReport: [],
+        productReport: [],
+        locationReport: [],
+      });
     } finally {
       setLoading(false);
     }

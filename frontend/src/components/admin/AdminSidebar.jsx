@@ -83,6 +83,11 @@ const AdminSidebar = () => {
       path: "/admin/settings",
       icon: FaCog,
     },
+    {
+      title: "Admin Test",
+      path: "/admin/test",
+      icon: FaCog,
+    },
   ];
 
   return (
@@ -136,14 +141,15 @@ const AdminSidebar = () => {
               <li key={item.path} className="nav-item">
                 {item.children ? (
                   <div className="nav-item-with-children">
-                    <div
+                    <Link
+                      to={item.path}
                       className={`nav-link admin-nav-link ${
                         isActiveItem ? "active" : ""
                       }`}
                     >
                       <Icon className="me-2" />
                       {item.title}
-                    </div>
+                    </Link>
                     {isActiveItem && (
                       <ul className="nav flex-column ms-3 mt-2">
                         {item.children.map((child) => (

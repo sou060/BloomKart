@@ -48,4 +48,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity > 0")
     long countInStock();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity <= 10")
+    long countLowStock();
+
+    @Query("SELECT p FROM Product p WHERE p.stockQuantity <= 10 ORDER BY p.stockQuantity ASC")
+    Page<Product> findLowStockProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.stockQuantity = 0 ORDER BY p.name ASC")
+    Page<Product> findOutOfStockProducts(Pageable pageable);
 } 

@@ -28,8 +28,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     long countByStatus(@Param("status") Order.OrderStatus status);
 
-    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.status = 'DELIVERED' AND o.createdAt >= :startDate")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status = 'DELIVERED' AND o.createdAt >= :startDate")
     BigDecimal getTotalRevenueSince(@Param("startDate") LocalDateTime startDate);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.paymentStatus = 'COMPLETED'")
+    BigDecimal getTotalRevenue();
 
     @Query("SELECT o FROM Order o WHERE " +
            "(:status IS NULL OR o.status = :status) AND " +
@@ -42,6 +45,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o WHERE o.paymentStatus = 'COMPLETED' ORDER BY o.createdAt DESC")
     List<Order> findCompletedOrders();
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.paymentStatus = 'COMPLETED' AND o.createdAt BETWEEN :startDate AND :endDate")
+    BigDecimal getRevenueBetweenDates(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
+    long countOrdersBetweenDates(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p.name, COUNT(oi), SUM(oi.price * oi.quantity) FROM OrderItem oi " +
+           "JOIN oi.product p " +
+           "JOIN oi.order o " +
+           "WHERE o.paymentStatus = 'COMPLETED' " +
+           "GROUP BY p.id, p.name " +
+           "ORDER BY COUNT(oi) DESC")
+    List<Object[]> getTopProductsBySales(@Param("limit") int limit);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt >= :startDate")
     long countOrdersSince(@Param("startDate") LocalDateTime startDate);

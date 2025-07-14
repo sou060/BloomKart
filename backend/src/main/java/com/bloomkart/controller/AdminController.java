@@ -55,10 +55,32 @@ public class AdminController {
         return ResponseEntity.ok(products);
     }
 
+    @GetMapping("/products/{id}")
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) {
+        Product product = productService.getProductById(id);
+        return ResponseEntity.ok(product);
+    }
+
     @PostMapping("/products")
     public ResponseEntity<Product> createProduct(
-            @RequestPart("product") Product product,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam("category") String category,
+            @RequestParam("stockQuantity") Integer stockQuantity,
+            @RequestParam(value = "isFresh", defaultValue = "false") boolean isFresh,
+            @RequestParam(value = "isFeatured", defaultValue = "false") boolean isFeatured,
             @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images) {
+        
+        Product product = new Product();
+        product.setName(name);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setCategory(category);
+        product.setStockQuantity(stockQuantity);
+        product.setFresh(isFresh);
+        product.setFeatured(isFeatured);
+        
         Product createdProduct = productService.createProduct(product, images);
         return ResponseEntity.ok(createdProduct);
     }
@@ -66,8 +88,24 @@ public class AdminController {
     @PutMapping("/products/{id}")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
-            @RequestPart("product") Product product,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam("category") String category,
+            @RequestParam("stockQuantity") Integer stockQuantity,
+            @RequestParam(value = "isFresh", defaultValue = "false") boolean isFresh,
+            @RequestParam(value = "isFeatured", defaultValue = "false") boolean isFeatured,
             @RequestPart(value = "newImages", required = false) List<org.springframework.web.multipart.MultipartFile> newImages) {
+        
+        Product product = new Product();
+        product.setName(name);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setCategory(category);
+        product.setStockQuantity(stockQuantity);
+        product.setFresh(isFresh);
+        product.setFeatured(isFeatured);
+        
         Product updatedProduct = productService.updateProduct(id, product, newImages);
         return ResponseEntity.ok(updatedProduct);
     }
