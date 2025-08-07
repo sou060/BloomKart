@@ -2,14 +2,17 @@ package com.bloomkart.service;
 
 import com.bloomkart.dto.AuthResponse;
 import com.bloomkart.dto.LoginRequest;
+import com.bloomkart.dto.ProfileUpdateRequest;
 import com.bloomkart.dto.RegisterRequest;
 import com.bloomkart.dto.RefreshTokenRequest;
 import com.bloomkart.entity.User;
 import com.bloomkart.entity.BlacklistedToken;
+import com.bloomkart.exception.BusinessException;
 import com.bloomkart.repository.UserRepository;
 import com.bloomkart.repository.BlacklistedTokenRepository;
 import com.bloomkart.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,33 +28,37 @@ import java.util.List;
 @Service
 public class AuthService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
+    public AuthService(AuthenticationManager authenticationManager,
+                      UserRepository userRepository,
+                      PasswordEncoder passwordEncoder,
+                      JwtUtils jwtUtils,
+                      BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+    }
 
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
+
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String accessToken = jwtUtils.generateAccessToken(userDetails);
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
 
         return new AuthResponse(accessToken, refreshToken, user, 86400000); // 24 hours
     }
@@ -78,19 +85,19 @@ public class AuthService {
 
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String refreshToken = refreshTokenRequest.getRefreshToken();
-        
+
         // Check if token is blacklisted
         if (blacklistedTokenRepository.existsByToken(refreshToken)) {
             throw new RuntimeException("Token has been invalidated");
         }
-        
+
         if (!jwtUtils.validateJwtToken(refreshToken) || !jwtUtils.isRefreshToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
         }
 
         String email = jwtUtils.getUsernameFromToken(refreshToken);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
 
         String newAccessToken = jwtUtils.generateAccessToken(user);
         String newRefreshToken = jwtUtils.generateRefreshToken(user);
@@ -105,15 +112,15 @@ public class AuthService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
     }
 
-    public User updateProfile(User userUpdate) {
+    public User updateProfile(ProfileUpdateRequest profileUpdateRequest) {
         User currentUser = getCurrentUser();
-        
-        currentUser.setName(userUpdate.getName());
-        currentUser.setPhoneNumber(userUpdate.getPhoneNumber());
-        
+
+        currentUser.setName(profileUpdateRequest.getName());
+        currentUser.setPhoneNumber(profileUpdateRequest.getPhoneNumber());
+
         return userRepository.save(currentUser);
     }
 
@@ -121,7 +128,7 @@ public class AuthService {
         if (jwtUtils.validateJwtToken(refreshToken) && jwtUtils.isRefreshToken(refreshToken)) {
             String email = jwtUtils.getUsernameFromToken(refreshToken);
             User user = userRepository.findByEmail(email).orElse(null);
-            
+
             if (user != null) {
                 blacklistToken(refreshToken, user.getId(), "User logout");
             }

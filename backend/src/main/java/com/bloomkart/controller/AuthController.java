@@ -2,6 +2,7 @@ package com.bloomkart.controller;
 
 import com.bloomkart.dto.AuthResponse;
 import com.bloomkart.dto.LoginRequest;
+import com.bloomkart.dto.ProfileUpdateRequest;
 import com.bloomkart.dto.RegisterRequest;
 import com.bloomkart.dto.RefreshTokenRequest;
 import com.bloomkart.entity.User;
@@ -15,11 +16,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
+    private final AuthService authService;
+
     @Autowired
-    private AuthService authService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -58,8 +62,8 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<User> updateProfile(@Valid @RequestBody User user) {
-        User updatedUser = authService.updateProfile(user);
+    public ResponseEntity<User> updateProfile(@Valid @RequestBody ProfileUpdateRequest profileUpdateRequest) {
+        User updatedUser = authService.updateProfile(profileUpdateRequest);
         return ResponseEntity.ok(updatedUser);
     }
 
