@@ -36,19 +36,19 @@ const Login = () => {
     try {
       console.log("Login form submitted with:", formData.email);
       console.log("Current location:", location.pathname);
-      
+
       const response = await login(formData.email, formData.password);
       console.log("Login API call successful, response:", response);
-      
+
       // Add a small delay to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       toast.success("Login successful!");
-      
+
       // Check where we want to redirect to
       const from = location.state?.from?.pathname || "/";
       console.log("Redirecting to:", from);
-      
+
       // Use replace to avoid back button issues
       navigate(from, { replace: true });
       console.log("Navigate called to:", from);
