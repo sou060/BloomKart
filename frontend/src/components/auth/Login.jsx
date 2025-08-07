@@ -34,15 +34,15 @@ const Login = () => {
 
     try {
       const response = await login(formData.email, formData.password);
-      
+
       // Add a small delay to ensure state is updated
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       toast.success("Login successful!");
-      
+
       // Check where we want to redirect to
       const from = location.state?.from?.pathname || "/";
-      
+
       // Use replace to avoid back button issues
       navigate(from, { replace: true });
     } catch (error) {
