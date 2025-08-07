@@ -82,12 +82,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "An unexpected error occurred",
-            request.getDescription(false),
-            LocalDateTime.now()
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, WebRequest request) {
+        // Log the actual exception for debugging
+        System.err.println("Unexpected error occurred: " + ex.getMessage());
+        ex.printStackTrace();
+        
+        Map<String, Object> errorResponse = Map.of(
+            "status", HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "message", "An unexpected error occurred",
+            "details", request.getDescription(false).replace("uri=", ""),
+            "timestamp", LocalDateTime.now()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
