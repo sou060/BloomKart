@@ -54,11 +54,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             
-            if (!user.getProvider().equals(AuthProvider.valueOf(registrationId.toUpperCase()))) {
-                throw new BusinessException(
-                    "You're signed up with " + user.getProvider() + " account. Please use your " + user.getProvider() + " account to login.",
-                    HttpStatus.BAD_REQUEST
-                );
+            AuthProvider requestedProvider = AuthProvider.valueOf(registrationId.toUpperCase());
+            
+            // Allow migration from LOCAL to OAuth2 providers
+            if (!user.getProvider().equals(requestedProvider)) {
+                if (user.getProvider() == AuthProvider.LOCAL) {
+                    // Migrate LOCAL user to OAuth2 provider
+                    user.setProvider(requestedProvider);
+                    user.setProviderId(oAuth2UserInfo.getId());
+                    // Keep existing password for potential fallback
+                } else {
+                    // Different OAuth2 providers - still block this
+                    throw new BusinessException(
+                        "You're signed up with " + user.getProvider() + " account. Please use your " + user.getProvider() + " account to login.",
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
             }
             
             user = updateExistingUser(user, oAuth2UserInfo);
