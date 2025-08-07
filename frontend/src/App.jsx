@@ -13,6 +13,7 @@ import Register from "./components/auth/Register";
 import Profile from "./pages/Profile";
 import Addresses from "./pages/Addresses";
 import LogoutTest from "./components/LogoutTest";
+import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminDashboard from "./components/admin/AdminDashboard";
@@ -32,6 +33,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./App.css";
+import "./styles/auth.css";
 
 function App() {
   return (
@@ -71,6 +73,10 @@ function App() {
               />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route
+                path="/oauth2/redirect"
+                element={<OAuth2RedirectHandler />}
+              />
               <Route
                 path="/profile"
                 element={

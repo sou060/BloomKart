@@ -173,6 +173,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const setTokensFromOAuth2 = (token, refreshTokenValue) => {
+    setAccessToken(token);
+    setRefreshToken(refreshTokenValue);
+    decodeAndSetUser(token);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -188,6 +194,7 @@ export const AuthProvider = ({ children }) => {
         refreshTokens,
         checkAndRefreshToken,
         updateUser,
+        setTokensFromOAuth2,
       }}
     >
       {children}
