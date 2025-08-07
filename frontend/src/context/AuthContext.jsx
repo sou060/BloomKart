@@ -16,19 +16,55 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Manual JWT decode function as fallback
+  const manualJwtDecode = (token) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error("Manual JWT decode error:", error);
+      return null;
+    }
+  };
+
   // Function to decode and set user from token
   const decodeAndSetUser = useCallback((token) => {
     if (token) {
       try {
-        const decoded = jwtDecode(token);
-        setUser(decoded);
-        return decoded;
+        console.log("Attempting to decode token:", token.substring(0, 50) + "...");
+        
+        // Try jwt-decode library first
+        let decoded;
+        try {
+          decoded = jwtDecode(token);
+          console.log("jwt-decode library successful:", decoded);
+        } catch (jwtLibError) {
+          console.warn("jwt-decode library failed, trying manual decode:", jwtLibError);
+          decoded = manualJwtDecode(token);
+          if (decoded) {
+            console.log("Manual decode successful:", decoded);
+          }
+        }
+        
+        if (decoded) {
+          console.log("Token decoded successfully:", decoded);
+          setUser(decoded);
+          return decoded;
+        } else {
+          throw new Error("Both decode methods failed");
+        }
       } catch (e) {
         console.error("Error decoding token:", e);
+        console.error("Token that failed to decode:", token);
         setUser(null);
         return null;
       }
     }
+    console.log("No token provided to decodeAndSetUser");
     return null;
   }, []);
 
@@ -79,23 +115,40 @@ export const AuthProvider = ({ children }) => {
   }, [accessToken, refreshTokens]);
 
   useEffect(() => {
+    console.log("AuthContext useEffect triggered. AccessToken:", accessToken ? "Present" : "None");
     if (accessToken) {
-      decodeAndSetUser(accessToken);
+      const decodedUser = decodeAndSetUser(accessToken);
+      console.log("User set in useEffect:", decodedUser);
     }
     setLoading(false);
+    console.log("Loading set to false");
   }, [accessToken, decodeAndSetUser]);
 
   const login = async (email, password) => {
+    console.log("Login attempt for:", email);
     const res = await api.post("/auth/login", { email, password });
+    console.log("Login response received:", res.data);
+    
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       res.data;
 
+    console.log("Setting tokens in state and localStorage");
     setAccessToken(newAccessToken);
     setRefreshToken(newRefreshToken);
     localStorage.setItem("accessToken", newAccessToken);
     localStorage.setItem("refreshToken", newRefreshToken);
 
-    decodeAndSetUser(newAccessToken);
+    console.log("Decoding and setting user from token");
+    const decodedUser = decodeAndSetUser(newAccessToken);
+    console.log("Login process completed. Decoded user:", decodedUser);
+    
+    // Ensure user state is set before returning
+    if (decodedUser) {
+      console.log("User successfully decoded and set");
+    } else {
+      console.error("Failed to decode user from token");
+    }
+    
     return res.data;
   };
 

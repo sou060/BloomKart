@@ -24,10 +24,15 @@ const Login = () => {
     setLoading(true);
 
     try {
+      console.log("Login form submitted");
       const response = await login(formData.email, formData.password);
+      console.log("Login successful, calling toast and navigate");
       toast.success("Login successful!");
+      console.log("About to navigate to home page");
       navigate("/");
+      console.log("Navigate called");
     } catch (error) {
+      console.error("Login error:", error);
       const errorMessage = error.response?.data?.message || "Login failed";
       toast.error(errorMessage);
     } finally {
