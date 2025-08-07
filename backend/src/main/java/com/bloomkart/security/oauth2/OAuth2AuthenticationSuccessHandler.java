@@ -28,10 +28,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Autowired
     public OAuth2AuthenticationSuccessHandler(
             JwtUtils jwtUtils,
-            @Value("${app.oauth2.authorized-redirect-uris}") List<String> authorizedRedirectUris,
+            @Value("${app.oauth2.authorized-redirect-uris}") String authorizedRedirectUris,
             ObjectMapper objectMapper) {
         this.jwtUtils = jwtUtils;
-        this.authorizedRedirectUris = authorizedRedirectUris;
+        this.authorizedRedirectUris = List.of(authorizedRedirectUris.split(","));
         this.objectMapper = objectMapper;
     }
 

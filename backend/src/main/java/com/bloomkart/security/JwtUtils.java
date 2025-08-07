@@ -38,12 +38,28 @@ public class JwtUtils {
         return createToken(claims, userDetails.getUsername(), jwtExpirationMs);
     }
 
+    public String generateAccessToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", user.getId());
+        claims.put("name", user.getName());
+        claims.put("role", user.getRole().name());
+        claims.put("email", user.getEmail());
+        return createToken(claims, user.getEmail(), jwtExpirationMs);
+    }
+
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         User user = (User) userDetails;
         claims.put("userId", user.getId());
         claims.put("type", "refresh");
         return createToken(claims, userDetails.getUsername(), jwtRefreshExpirationMs);
+    }
+
+    public String generateRefreshToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", user.getId());
+        claims.put("type", "refresh");
+        return createToken(claims, user.getEmail(), jwtRefreshExpirationMs);
     }
 
     private String createToken(Map<String, Object> claims, String subject, long expiration) {
