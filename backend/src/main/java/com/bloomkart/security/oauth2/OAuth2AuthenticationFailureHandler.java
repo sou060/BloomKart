@@ -15,7 +15,7 @@ import java.io.IOException;
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     @Value("${app.oauth2.authorized-redirect-uris}")
-    private String defaultRedirectUri;
+    private String authorizedRedirectUris;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
@@ -25,7 +25,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     protected String getDefaultFailureUrl(AuthenticationException exception) {
         // Get the first authorized redirect URI as the default
-        String redirectUri = defaultRedirectUri.split(",")[0];
+        String redirectUri = authorizedRedirectUris.split(",")[0];
         
         return UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("error", exception.getLocalizedMessage())
