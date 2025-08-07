@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import {
   FaTachometerAlt,
@@ -18,15 +18,20 @@ import {
 } from "react-icons/fa";
 
 const AdminSidebar = () => {
+  console.log("AdminSidebar rendered"); // Debug: check if component renders
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate(); // Add useNavigate
 
   const isActive = (path) => location.pathname === path;
   const isActiveParent = (path) => location.pathname.startsWith(path);
 
   const handleLogout = async () => {
+    console.log("AdminSidebar: Logout button clicked");
     try {
       await logout();
+      navigate("/login");
+      window.location.reload(); // Force full UI reset to close overlays
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -92,6 +97,8 @@ const AdminSidebar = () => {
 
   return (
     <div className="admin-sidebar">
+      {/* Debug: Minimal test button */}
+      <button onClick={() => alert("Test button works!")}>Test Logout</button>
       {/* Admin Header */}
       <div className="admin-sidebar-header">
         <div className="d-flex align-items-center mb-3">

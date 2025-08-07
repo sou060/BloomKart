@@ -1,6 +1,7 @@
 package com.bloomkart.controller;
 
 import com.bloomkart.entity.Product;
+import com.bloomkart.service.AuditLogService;
 import com.bloomkart.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/products")
@@ -20,6 +22,9 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
     @GetMapping
     public ResponseEntity<Page<Product>> getProducts(
@@ -59,6 +64,12 @@ public class ProductController {
             @Valid @RequestPart("product") Product product,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         Product createdProduct = productService.createProduct(product, images);
+        String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogService.logAction(
+            "CREATE_PRODUCT",
+            "Created product: " + createdProduct.getName() + " (ID: " + createdProduct.getId() + ")",
+            adminEmail
+        );
         return ResponseEntity.ok(createdProduct);
     }
 
@@ -68,12 +79,24 @@ public class ProductController {
             @Valid @RequestPart("product") Product product,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages) {
         Product updatedProduct = productService.updateProduct(id, product, newImages);
+        String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogService.logAction(
+            "UPDATE_PRODUCT",
+            "Updated product: " + updatedProduct.getName() + " (ID: " + updatedProduct.getId() + ")",
+            adminEmail
+        );
         return ResponseEntity.ok(updatedProduct);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
+        String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogService.logAction(
+            "DELETE_PRODUCT",
+            "Deleted product with ID: " + id,
+            adminEmail
+        );
         return ResponseEntity.noContent().build();
     }
 } 

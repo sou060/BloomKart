@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -39,6 +40,9 @@ public class AuthService {
 
     @Autowired
     private BlacklistedTokenRepository blacklistedTokenRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
@@ -67,13 +71,19 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setRole(User.Role.USER);
+        user.setEnabled(false); // Require email verification
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
 
         User savedUser = userRepository.save(user);
 
-        String accessToken = jwtUtils.generateAccessToken(savedUser);
-        String refreshToken = jwtUtils.generateRefreshToken(savedUser);
+        // Send verification email
+        String verifyUrl = "http://localhost:8080/api/auth/verify?token=" + token;
+        String subject = "Verify your BloomKart account";
+        String body = "Welcome to BloomKart! Please verify your email by clicking the link: " + verifyUrl;
+        emailService.sendEmail(user.getEmail(), subject, body);
 
-        return new AuthResponse(accessToken, refreshToken, savedUser, 86400000);
+        return new AuthResponse(null, null, savedUser, 0); // No tokens until verified
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
@@ -118,13 +128,21 @@ public class AuthService {
     }
 
     public void logout(String refreshToken) {
+        System.out.println("Logout called with token: " + refreshToken);
         if (jwtUtils.validateJwtToken(refreshToken) && jwtUtils.isRefreshToken(refreshToken)) {
             String email = jwtUtils.getUsernameFromToken(refreshToken);
+            System.out.println("Token valid, user email: " + email);
             User user = userRepository.findByEmail(email).orElse(null);
-            
+
             if (user != null) {
+                System.out.println("User found, blacklisting token...");
                 blacklistToken(refreshToken, user.getId(), "User logout");
+                System.out.println("Token blacklisted.");
+            } else {
+                System.out.println("User not found for email: " + email);
             }
+        } else {
+            System.out.println("Invalid or non-refresh token.");
         }
     }
 
@@ -168,5 +186,16 @@ public class AuthService {
     public void cleanupExpiredBlacklistedTokens() {
         LocalDateTime now = LocalDateTime.now();
         blacklistedTokenRepository.deleteExpiredTokens(now);
+    }
+
+    public String verifyEmail(String token) {
+        User user = userRepository.findAll().stream()
+            .filter(u -> token.equals(u.getVerificationToken()))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Invalid or expired verification token"));
+        user.setEnabled(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
+        return "Email verified successfully. You can now log in.";
     }
 } 

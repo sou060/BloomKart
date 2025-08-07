@@ -25,6 +25,7 @@ const LogoutModal = ({ isOpen, onClose }) => {
       clearCart();
       navigate("/");
       onClose();
+      window.location.reload();
       toast.success("Logged out successfully!");
     } catch (error) {
       toast.error("Logout failed. Please try again.");
@@ -40,6 +41,7 @@ const LogoutModal = ({ isOpen, onClose }) => {
       clearCart();
       navigate("/");
       onClose();
+      window.location.reload();
       toast.success("All sessions logged out successfully!");
     } catch (error) {
       toast.error("Failed to logout all sessions.");

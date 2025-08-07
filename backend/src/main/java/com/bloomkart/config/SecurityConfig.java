@@ -2,6 +2,8 @@ package com.bloomkart.config;
 
 import com.bloomkart.security.CustomUserDetailsService;
 import com.bloomkart.security.JwtAuthenticationFilter;
+import com.bloomkart.security.CustomOAuth2UserService;
+import com.bloomkart.security.OAuth2AuthenticationSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +32,12 @@ public class SecurityConfig {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @Autowired
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -70,13 +78,21 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/**", "/products/**", "/uploads/**").permitAll()
+                .requestMatchers("/auth/**", "/products/**", "/uploads/**", "/api/uploads/**").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll() // Allow OAuth2 endpoints
                 .requestMatchers("/reviews/product/*/stats", "/reviews/product/*").permitAll()
                 .requestMatchers("/reviews/**").authenticated()
                 .requestMatchers("/orders/**").authenticated()
                 .requestMatchers("/addresses/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                // .defaultSuccessUrl("/", true) // Removed to allow custom success handler
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

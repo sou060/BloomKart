@@ -69,4 +69,10 @@ public class AuthController {
         long count = authService.getActiveSessionsCount(user.getId());
         return ResponseEntity.ok(Map.of("activeSessions", count));
     }
+
+    @GetMapping("/verify")
+    public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam("token") String token) {
+        String message = authService.verifyEmail(token);
+        return ResponseEntity.ok(Map.of("message", message));
+    }
 } 

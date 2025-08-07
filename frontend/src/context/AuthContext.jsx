@@ -132,12 +132,21 @@ export const AuthProvider = ({ children }) => {
         toast.error("Logout failed. Please try again.");
       }
     } finally {
+      console.log("Logging out: clearing user and tokens");
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("cart"); // Clear cart on logout
+      console.log(
+        "Logout complete. User:",
+        user,
+        "AccessToken:",
+        accessToken,
+        "RefreshToken:",
+        refreshToken
+      );
     }
   };
 
@@ -188,6 +197,8 @@ export const AuthProvider = ({ children }) => {
         refreshTokens,
         checkAndRefreshToken,
         updateUser,
+        setAccessToken,
+        decodeAndSetUser,
       }}
     >
       {children}

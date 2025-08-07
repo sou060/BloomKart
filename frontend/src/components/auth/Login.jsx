@@ -35,6 +35,11 @@ const Login = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href =
+      "http://localhost:8080/api/oauth2/authorization/google";
+  };
+
   return (
     <div className="container py-5">
       <div className="row justify-content-center">
@@ -73,6 +78,22 @@ const Login = () => {
                     required
                   />
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger w-100 mb-3"
+                  onClick={handleGoogleLogin}
+                >
+                  <img
+                    src="https://developers.google.com/identity/images/g-logo.png"
+                    alt="Google"
+                    style={{
+                      width: 20,
+                      marginRight: 8,
+                      verticalAlign: "middle",
+                    }}
+                  />
+                  Login with Google
+                </button>
                 <button
                   type="submit"
                   className="btn btn-primary w-100"
