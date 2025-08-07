@@ -145,6 +145,7 @@ export const AuthProvider = ({ children }) => {
     // Ensure user state is set before returning
     if (decodedUser) {
 <<<<<<< Current (Your changes)
+<<<<<<< Current (Your changes)
       console.log("User successfully decoded and set");
     } else {
       console.error("Failed to decode user from token");
@@ -154,6 +155,14 @@ export const AuthProvider = ({ children }) => {
       console.log("Current user state in context will be:", decodedUser);
     } else {
       console.error("❌ Failed to decode user from token");
+      throw new Error("Failed to authenticate user");
+>>>>>>> Incoming (Background Agent changes)
+=======
+      console.log("User successfully decoded and set:", decodedUser.email, decodedUser.role);
+      // Verify the user state is actually set in the context
+      console.log("Current user state in context will be:", decodedUser);
+    } else {
+      console.error("Failed to decode user from token");
       throw new Error("Failed to authenticate user");
 >>>>>>> Incoming (Background Agent changes)
     }
