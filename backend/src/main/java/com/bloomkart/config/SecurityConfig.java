@@ -87,7 +87,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/**", "/products/**", "/uploads/**", "/oauth2/**").permitAll()
+                .requestMatchers("/", "/auth/**", "/products/**", "/uploads/**", "/oauth2/**").permitAll()
                 .requestMatchers("/reviews/product/*/stats", "/reviews/product/*").permitAll()
                 .requestMatchers("/reviews/**").authenticated()
                 .requestMatchers("/orders/**").authenticated()
