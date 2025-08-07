@@ -16,7 +16,6 @@ const Login = () => {
   // Redirect if already logged in
   React.useEffect(() => {
     if (user) {
-      console.log("User already logged in, redirecting...");
       const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
@@ -34,11 +33,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Login form submitted with:", formData.email);
-      console.log("Current location:", location.pathname);
-      
       const response = await login(formData.email, formData.password);
-      console.log("Login API call successful, response:", response);
       
       // Add a small delay to ensure state is updated
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -47,13 +42,11 @@ const Login = () => {
       
       // Check where we want to redirect to
       const from = location.state?.from?.pathname || "/";
-      console.log("Redirecting to:", from);
       
       // Use replace to avoid back button issues
       navigate(from, { replace: true });
-      console.log("Navigate called to:", from);
     } catch (error) {
-      console.error("Login error details:", error);
+      console.error("Login error:", error);
       const errorMessage = error.response?.data?.message || "Login failed";
       toast.error(errorMessage);
     } finally {
