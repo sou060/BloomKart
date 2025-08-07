@@ -35,23 +35,16 @@ export const AuthProvider = ({ children }) => {
   const decodeAndSetUser = useCallback((token) => {
     if (token) {
       try {
-        console.log("Attempting to decode token:", token.substring(0, 50) + "...");
-        
         // Try jwt-decode library first
         let decoded;
         try {
           decoded = jwtDecode(token);
-          console.log("jwt-decode library successful:", decoded);
         } catch (jwtLibError) {
-          console.warn("jwt-decode library failed, trying manual decode:", jwtLibError);
+          // Fallback to manual decode
           decoded = manualJwtDecode(token);
-          if (decoded) {
-            console.log("Manual decode successful:", decoded);
-          }
         }
         
         if (decoded) {
-          console.log("Token decoded successfully:", decoded);
           setUser(decoded);
           return decoded;
         } else {
@@ -59,12 +52,10 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (e) {
         console.error("Error decoding token:", e);
-        console.error("Token that failed to decode:", token);
         setUser(null);
         return null;
       }
     }
-    console.log("No token provided to decodeAndSetUser");
     return null;
   }, []);
 
@@ -115,56 +106,26 @@ export const AuthProvider = ({ children }) => {
   }, [accessToken, refreshTokens]);
 
   useEffect(() => {
-    console.log("AuthContext useEffect triggered. AccessToken:", accessToken ? "Present" : "None");
     if (accessToken) {
-      const decodedUser = decodeAndSetUser(accessToken);
-      console.log("User set in useEffect:", decodedUser);
+      decodeAndSetUser(accessToken);
     }
     setLoading(false);
-    console.log("Loading set to false");
   }, [accessToken, decodeAndSetUser]);
 
   const login = async (email, password) => {
-    console.log("Login attempt for:", email);
     const res = await api.post("/auth/login", { email, password });
-    console.log("Login response received:", res.data);
-    
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       res.data;
 
-    console.log("Setting tokens in state and localStorage");
     setAccessToken(newAccessToken);
     setRefreshToken(newRefreshToken);
     localStorage.setItem("accessToken", newAccessToken);
     localStorage.setItem("refreshToken", newRefreshToken);
 
-    console.log("Decoding and setting user from token");
     const decodedUser = decodeAndSetUser(newAccessToken);
-    console.log("Login process completed. Decoded user:", decodedUser);
     
-    // Ensure user state is set before returning
-    if (decodedUser) {
-<<<<<<< Current (Your changes)
-<<<<<<< Current (Your changes)
-      console.log("User successfully decoded and set");
-    } else {
-      console.error("Failed to decode user from token");
-=======
-      console.log("✅ User successfully decoded and set:", decodedUser.email, decodedUser.role);
-      // Verify the user state is actually set in the context
-      console.log("Current user state in context will be:", decodedUser);
-    } else {
-      console.error("❌ Failed to decode user from token");
+    if (!decodedUser) {
       throw new Error("Failed to authenticate user");
->>>>>>> Incoming (Background Agent changes)
-=======
-      console.log("User successfully decoded and set:", decodedUser.email, decodedUser.role);
-      // Verify the user state is actually set in the context
-      console.log("Current user state in context will be:", decodedUser);
-    } else {
-      console.error("Failed to decode user from token");
-      throw new Error("Failed to authenticate user");
->>>>>>> Incoming (Background Agent changes)
     }
     
     return res.data;
