@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -9,8 +9,18 @@ const Login = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      console.log("🔄 User already logged in, redirecting...");
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,15 +34,26 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Login form submitted");
+      console.log("🚀 Login form submitted with:", formData.email);
+      console.log("📍 Current location:", location.pathname);
+      
       const response = await login(formData.email, formData.password);
-      console.log("Login successful, calling toast and navigate");
+      console.log("✅ Login API call successful, response:", response);
+      
+      // Add a small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       toast.success("Login successful!");
-      console.log("About to navigate to home page");
-      navigate("/");
-      console.log("Navigate called");
+      
+      // Check where we want to redirect to
+      const from = location.state?.from?.pathname || "/";
+      console.log("📍 Redirecting to:", from);
+      
+      // Use replace to avoid back button issues
+      navigate(from, { replace: true });
+      console.log("✅ Navigate called to:", from);
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ Login error details:", error);
       const errorMessage = error.response?.data?.message || "Login failed";
       toast.error(errorMessage);
     } finally {
