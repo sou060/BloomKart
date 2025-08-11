@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../axios.jsx";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
@@ -8,7 +8,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${window.location.protocol}//localhost:8080/api/products`);
+        const response = await API.get('/products');
         setProducts(response.data);
         console.log(response.data);
       } catch (error) {
