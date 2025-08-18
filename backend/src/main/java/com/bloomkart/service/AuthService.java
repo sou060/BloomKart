@@ -2,14 +2,17 @@ package com.bloomkart.service;
 
 import com.bloomkart.dto.AuthResponse;
 import com.bloomkart.dto.LoginRequest;
+import com.bloomkart.dto.ProfileUpdateRequest;
 import com.bloomkart.dto.RegisterRequest;
 import com.bloomkart.dto.RefreshTokenRequest;
 import com.bloomkart.entity.User;
 import com.bloomkart.entity.BlacklistedToken;
+import com.bloomkart.exception.BusinessException;
 import com.bloomkart.repository.UserRepository;
 import com.bloomkart.repository.BlacklistedTokenRepository;
 import com.bloomkart.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,41 +24,41 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class AuthService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
-
-    @Autowired
-    private EmailService emailService;
+    public AuthService(AuthenticationManager authenticationManager,
+                      UserRepository userRepository,
+                      PasswordEncoder passwordEncoder,
+                      JwtUtils jwtUtils,
+                      BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+    }
 
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
+
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String accessToken = jwtUtils.generateAccessToken(userDetails);
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
 
         return new AuthResponse(accessToken, refreshToken, user, 86400000); // 24 hours
     }
@@ -71,36 +74,30 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setRole(User.Role.USER);
-        user.setEnabled(false); // Require email verification
-        String token = UUID.randomUUID().toString();
-        user.setVerificationToken(token);
 
         User savedUser = userRepository.save(user);
 
-        // Send verification email
-        String verifyUrl = "http://localhost:8080/api/auth/verify?token=" + token;
-        String subject = "Verify your BloomKart account";
-        String body = "Welcome to BloomKart! Please verify your email by clicking the link: " + verifyUrl;
-        emailService.sendEmail(user.getEmail(), subject, body);
+        String accessToken = jwtUtils.generateAccessToken(savedUser);
+        String refreshToken = jwtUtils.generateRefreshToken(savedUser);
 
-        return new AuthResponse(null, null, savedUser, 0); // No tokens until verified
+        return new AuthResponse(accessToken, refreshToken, savedUser, 86400000);
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String refreshToken = refreshTokenRequest.getRefreshToken();
-        
+
         // Check if token is blacklisted
         if (blacklistedTokenRepository.existsByToken(refreshToken)) {
             throw new RuntimeException("Token has been invalidated");
         }
-        
+
         if (!jwtUtils.validateJwtToken(refreshToken) || !jwtUtils.isRefreshToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
         }
 
         String email = jwtUtils.getUsernameFromToken(refreshToken);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
 
         String newAccessToken = jwtUtils.generateAccessToken(user);
         String newRefreshToken = jwtUtils.generateRefreshToken(user);
@@ -115,34 +112,26 @@ public class AuthService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", HttpStatus.NOT_FOUND));
     }
 
-    public User updateProfile(User userUpdate) {
+    public User updateProfile(ProfileUpdateRequest profileUpdateRequest) {
         User currentUser = getCurrentUser();
-        
-        currentUser.setName(userUpdate.getName());
-        currentUser.setPhoneNumber(userUpdate.getPhoneNumber());
-        
+
+        currentUser.setName(profileUpdateRequest.getName());
+        currentUser.setPhoneNumber(profileUpdateRequest.getPhoneNumber());
+
         return userRepository.save(currentUser);
     }
 
     public void logout(String refreshToken) {
-        System.out.println("Logout called with token: " + refreshToken);
         if (jwtUtils.validateJwtToken(refreshToken) && jwtUtils.isRefreshToken(refreshToken)) {
             String email = jwtUtils.getUsernameFromToken(refreshToken);
-            System.out.println("Token valid, user email: " + email);
             User user = userRepository.findByEmail(email).orElse(null);
 
             if (user != null) {
-                System.out.println("User found, blacklisting token...");
                 blacklistToken(refreshToken, user.getId(), "User logout");
-                System.out.println("Token blacklisted.");
-            } else {
-                System.out.println("User not found for email: " + email);
             }
-        } else {
-            System.out.println("Invalid or non-refresh token.");
         }
     }
 
@@ -186,16 +175,5 @@ public class AuthService {
     public void cleanupExpiredBlacklistedTokens() {
         LocalDateTime now = LocalDateTime.now();
         blacklistedTokenRepository.deleteExpiredTokens(now);
-    }
-
-    public String verifyEmail(String token) {
-        User user = userRepository.findAll().stream()
-            .filter(u -> token.equals(u.getVerificationToken()))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Invalid or expired verification token"));
-        user.setEnabled(true);
-        user.setVerificationToken(null);
-        userRepository.save(user);
-        return "Email verified successfully. You can now log in.";
     }
 } 

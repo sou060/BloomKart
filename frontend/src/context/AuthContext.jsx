@@ -16,13 +16,40 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Manual JWT decode function as fallback
+  const manualJwtDecode = (token) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error("Manual JWT decode error:", error);
+      return null;
+    }
+  };
+
   // Function to decode and set user from token
   const decodeAndSetUser = useCallback((token) => {
     if (token) {
       try {
-        const decoded = jwtDecode(token);
-        setUser(decoded);
-        return decoded;
+        // Try jwt-decode library first
+        let decoded;
+        try {
+          decoded = jwtDecode(token);
+        } catch (jwtLibError) {
+          // Fallback to manual decode
+          decoded = manualJwtDecode(token);
+        }
+        
+        if (decoded) {
+          setUser(decoded);
+          return decoded;
+        } else {
+          throw new Error("Both decode methods failed");
+        }
       } catch (e) {
         console.error("Error decoding token:", e);
         setUser(null);
@@ -95,7 +122,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("accessToken", newAccessToken);
     localStorage.setItem("refreshToken", newRefreshToken);
 
-    decodeAndSetUser(newAccessToken);
+    const decodedUser = decodeAndSetUser(newAccessToken);
+    
+    if (!decodedUser) {
+      throw new Error("Failed to authenticate user");
+    }
+    
     return res.data;
   };
 
@@ -132,21 +164,12 @@ export const AuthProvider = ({ children }) => {
         toast.error("Logout failed. Please try again.");
       }
     } finally {
-      console.log("Logging out: clearing user and tokens");
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("cart"); // Clear cart on logout
-      console.log(
-        "Logout complete. User:",
-        user,
-        "AccessToken:",
-        accessToken,
-        "RefreshToken:",
-        refreshToken
-      );
     }
   };
 
@@ -182,6 +205,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const setTokensFromOAuth2 = (token, refreshTokenValue) => {
+    setAccessToken(token);
+    setRefreshToken(refreshTokenValue);
+    decodeAndSetUser(token);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -197,8 +226,7 @@ export const AuthProvider = ({ children }) => {
         refreshTokens,
         checkAndRefreshToken,
         updateUser,
-        setAccessToken,
-        decodeAndSetUser,
+        setTokensFromOAuth2,
       }}
     >
       {children}
