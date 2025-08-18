@@ -7,50 +7,30 @@ const OAuth2RedirectHandler = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("OAuth2RedirectHandler: Component mounted.");
-    console.log("OAuth2RedirectHandler: Full URL location object:", location);
-    console.log("OAuth2RedirectHandler: URL fragment (hash):", location.hash);
-
-    if (!location.hash) {
-      console.error("OAuth2RedirectHandler: No URL fragment found!");
-      toast.error("Authentication failed: Invalid redirect.");
-      navigate("/login");
-      return;
-    }
-
-    // Remove the leading '#' from the fragment
-    const fragment = location.hash.substring(1);
-    console.log("OAuth2RedirectHandler: Fragment string to be parsed:", fragment);
-
-    const urlParams = new URLSearchParams(fragment);
-    const token = urlParams.get("token");
-    const refreshToken = urlParams.get("refresh_token");
-    const error = urlParams.get("error");
-
-    console.log("OAuth2RedirectHandler: Parsed token:", token);
-    console.log("OAuth2RedirectHandler: Parsed refresh_token:", refreshToken);
-    console.log("OAuth2RedirectHandler: Parsed error:", error);
+    const params = new URLSearchParams(location.hash.substring(1));
+    const token = params.get("token");
+    const refreshToken = params.get("refresh_token");
+    const error = params.get("error");
 
     if (error) {
-      console.error("OAuth2RedirectHandler: Error received from server:", error);
       toast.error(`Authentication failed: ${error}`);
       navigate("/login");
       return;
     }
 
     if (token && refreshToken) {
-      console.log("OAuth2RedirectHandler: Tokens found. Storing in localStorage...");
       localStorage.setItem("accessToken", token);
       localStorage.setItem("refreshToken", refreshToken);
-      console.log("OAuth2RedirectHandler: Tokens stored. Redirecting to homepage...");
       toast.success("Login successful!");
+      
+      // Force a full page reload to the homepage.
+      // This is the most reliable way to ensure the app state is updated.
       window.location.href = "/";
+
     } else {
-      console.error("OAuth2RedirectHandler: Tokens not found in URL fragment.");
-      toast.error("Authentication failed: Invalid token received.");
+      toast.error("Authentication failed: Invalid token received from server.");
       navigate("/login");
     }
-    // The dependency array is empty to ensure this runs only once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

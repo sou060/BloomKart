@@ -87,12 +87,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/auth/**", "/products/**", "/uploads/**", "/oauth2/**", "/login/oauth2/**").permitAll()
-                .requestMatchers("/reviews/product/*/stats", "/reviews/product/*").permitAll()
-                .requestMatchers("/reviews/**").authenticated()
-                .requestMatchers("/orders/**").authenticated()
-                .requestMatchers("/addresses/**").authenticated()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/", "/api/auth/**", "/api/products/**", "/api/uploads/**", "/oauth2/**", "/login/oauth2/**").permitAll()
+                .requestMatchers("/api/reviews/product/*/stats", "/api/reviews/product/*").permitAll()
+                .requestMatchers("/api/reviews/**").authenticated()
+                .requestMatchers("/api/orders/**").authenticated()
+                .requestMatchers("/api/addresses/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().permitAll()
             )
             .oauth2Login(oauth2 -> oauth2
