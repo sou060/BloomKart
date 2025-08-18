@@ -1,50 +1,58 @@
-import React, { useEffect, useContext } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import React, { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const OAuth2RedirectHandler = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { setTokensFromOAuth2 } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleOAuth2Redirect = () => {
-      const urlParams = new URLSearchParams(location.search);
-      const token = urlParams.get("token");
-      const refreshToken = urlParams.get("refresh_token");
-      const error = urlParams.get("error");
+    console.log("OAuth2RedirectHandler: Component mounted.");
+    console.log("OAuth2RedirectHandler: Full URL location object:", location);
+    console.log("OAuth2RedirectHandler: URL fragment (hash):", location.hash);
 
-      if (error) {
-        toast.error(`OAuth2 authentication failed: ${error}`);
-        navigate("/login");
-        return;
-      }
+    if (!location.hash) {
+      console.error("OAuth2RedirectHandler: No URL fragment found!");
+      toast.error("Authentication failed: Invalid redirect.");
+      navigate("/login");
+      return;
+    }
 
-      if (token && refreshToken) {
-        try {
-          // Store tokens in localStorage
-          localStorage.setItem("accessToken", token);
-          localStorage.setItem("refreshToken", refreshToken);
+    // Remove the leading '#' from the fragment
+    const fragment = location.hash.substring(1);
+    console.log("OAuth2RedirectHandler: Fragment string to be parsed:", fragment);
 
-          // Update auth context
-          setTokensFromOAuth2(token, refreshToken);
+    const urlParams = new URLSearchParams(fragment);
+    const token = urlParams.get("token");
+    const refreshToken = urlParams.get("refresh_token");
+    const error = urlParams.get("error");
 
-          toast.success("Google login successful!");
-          navigate("/");
-        } catch (error) {
-          console.error("Error processing OAuth2 tokens:", error);
-          toast.error("Failed to process authentication tokens");
-          navigate("/login");
-        }
-      } else {
-        toast.error("No authentication tokens received");
-        navigate("/login");
-      }
-    };
+    console.log("OAuth2RedirectHandler: Parsed token:", token);
+    console.log("OAuth2RedirectHandler: Parsed refresh_token:", refreshToken);
+    console.log("OAuth2RedirectHandler: Parsed error:", error);
 
-    handleOAuth2Redirect();
-  }, [location, navigate, setTokensFromOAuth2]);
+    if (error) {
+      console.error("OAuth2RedirectHandler: Error received from server:", error);
+      toast.error(`Authentication failed: ${error}`);
+      navigate("/login");
+      return;
+    }
+
+    if (token && refreshToken) {
+      console.log("OAuth2RedirectHandler: Tokens found. Storing in localStorage...");
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("refreshToken", refreshToken);
+      console.log("OAuth2RedirectHandler: Tokens stored. Redirecting to homepage...");
+      toast.success("Login successful!");
+      window.location.href = "/";
+    } else {
+      console.error("OAuth2RedirectHandler: Tokens not found in URL fragment.");
+      toast.error("Authentication failed: Invalid token received.");
+      navigate("/login");
+    }
+    // The dependency array is empty to ensure this runs only once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="container py-5">

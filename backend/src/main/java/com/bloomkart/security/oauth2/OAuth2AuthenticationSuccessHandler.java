@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,8 @@ import java.util.List;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler.class);
 
     private final JwtUtils jwtUtils;
     private final List<String> authorizedRedirectUris;
@@ -44,16 +48,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
+        clearAuthenticationAttributes(request);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        String redirectUri = request.getParameter("redirect_uri");
-        if (redirectUri != null && !isAuthorizedRedirectUri(redirectUri)) {
-            throw new IllegalArgumentException("Sorry! We've got an Unauthorized Redirect URI and can't proceed with the authentication");
-        }
-
-        String targetUrl = redirectUri != null ? redirectUri : getDefaultTargetUrl();
+        String targetUrl = authorizedRedirectUris.get(0);
 
         CustomUserPrincipal userPrincipal = (CustomUserPrincipal) authentication.getPrincipal();
         User user = userPrincipal.getUser();
@@ -61,13 +61,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String accessToken = jwtUtils.generateAccessToken(user);
         String refreshToken = jwtUtils.generateRefreshToken(user);
 
-        // Create AuthResponse object
-        AuthResponse authResponse = new AuthResponse(accessToken, refreshToken, user, 86400000);
-
-        // Add tokens to the redirect URL
+        // Using fragment to pass tokens to the frontend
         return UriComponentsBuilder.fromUriString(targetUrl)
-                .queryParam("token", accessToken)
-                .queryParam("refresh_token", refreshToken)
+                .fragment("token=" + accessToken + "&refresh_token=" + refreshToken)
                 .build().toUriString();
     }
 

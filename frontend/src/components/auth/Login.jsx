@@ -55,10 +55,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    const redirectUri = encodeURIComponent(
-      `${window.location.origin}/oauth2/redirect`
-    );
-    const googleAuthUrl = `http://localhost:8080/api/oauth2/authorize/google?redirect_uri=${redirectUri}`;
+    const googleAuthUrl = `http://localhost:8080/api/oauth2/authorization/google`;
     window.location.href = googleAuthUrl;
   };
 
@@ -82,6 +79,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                autoComplete="email"
               />
             </div>
             <div className="mb-3">
@@ -96,6 +94,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="current-password"
               />
             </div>
             <button

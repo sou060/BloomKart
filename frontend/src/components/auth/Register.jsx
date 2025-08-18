@@ -56,8 +56,7 @@ const Register = () => {
   };
 
   const handleGoogleLogin = () => {
-    const redirectUri = encodeURIComponent(`${window.location.origin}/login/success`);
-    const googleAuthUrl = `http://localhost:8080/oauth2/authorize/google?redirect_uri=${redirectUri}`;
+    const googleAuthUrl = `http://localhost:8080/api/oauth2/authorization/google`;
     window.location.href = googleAuthUrl;
   };
 

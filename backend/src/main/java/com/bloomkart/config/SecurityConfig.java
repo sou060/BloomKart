@@ -87,7 +87,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/auth/**", "/products/**", "/uploads/**", "/oauth2/**").permitAll()
+                .requestMatchers("/", "/auth/**", "/products/**", "/uploads/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/reviews/product/*/stats", "/reviews/product/*").permitAll()
                 .requestMatchers("/reviews/**").authenticated()
                 .requestMatchers("/orders/**").authenticated()
@@ -96,10 +96,6 @@ public class SecurityConfig {
                 .anyRequest().permitAll()
             )
             .oauth2Login(oauth2 -> oauth2
-                .authorizationEndpoint(authorizationEndpoint -> 
-                    authorizationEndpoint.baseUri("/oauth2/authorize"))
-                .redirectionEndpoint(redirectionEndpoint -> 
-                    redirectionEndpoint.baseUri("/oauth2/callback/*"))
                 .userInfoEndpoint(userInfoEndpoint -> 
                     userInfoEndpoint.userService(customOAuth2UserService))
                 .successHandler(oAuth2AuthenticationSuccessHandler)

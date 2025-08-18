@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect, useCallback, useMemo } from "react";
 import api from "../axios";
 import jwtDecode from "jwt-decode";
 import { toast } from "react-toastify";
@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Manual JWT decode function as fallback
   const manualJwtDecode = (token) => {
     try {
       const base64Url = token.split('.')[1];
@@ -31,16 +30,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Function to decode and set user from token
   const decodeAndSetUser = useCallback((token) => {
     if (token) {
       try {
-        // Try jwt-decode library first
         let decoded;
         try {
           decoded = jwtDecode(token);
         } catch (jwtLibError) {
-          // Fallback to manual decode
           decoded = manualJwtDecode(token);
         }
         
@@ -59,22 +55,22 @@ export const AuthProvider = ({ children }) => {
     return null;
   }, []);
 
-  // Function to refresh tokens
+  const setTokens = useCallback((newAccessToken, newRefreshToken) => {
+    localStorage.setItem("accessToken", newAccessToken);
+    localStorage.setItem("refreshToken", newRefreshToken);
+    setAccessToken(newAccessToken);
+    setRefreshToken(newRefreshToken);
+    decodeAndSetUser(newAccessToken);
+  }, [decodeAndSetUser]);
+
   const refreshTokens = useCallback(async () => {
     if (!refreshToken || refreshing) return null;
 
     setRefreshing(true);
     try {
       const response = await api.post("/auth/refresh", { refreshToken });
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-        response.data;
-
-      setAccessToken(newAccessToken);
-      setRefreshToken(newRefreshToken);
-      localStorage.setItem("accessToken", newAccessToken);
-      localStorage.setItem("refreshToken", newRefreshToken);
-
-      decodeAndSetUser(newAccessToken);
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+      setTokens(newAccessToken, newRefreshToken);
       return newAccessToken;
     } catch (error) {
       console.error("Token refresh failed:", error);
@@ -83,9 +79,8 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshToken, refreshing, decodeAndSetUser]);
+  }, [refreshToken, refreshing, setTokens]);
 
-  // Check if token needs refresh
   const checkAndRefreshToken = useCallback(async () => {
     if (!accessToken) return null;
 
@@ -94,7 +89,6 @@ export const AuthProvider = ({ children }) => {
       const currentTime = Date.now() / 1000;
       const timeUntilExpiry = decoded.exp - currentTime;
 
-      // Refresh if token expires in less than 5 minutes
       if (timeUntilExpiry < 300) {
         return await refreshTokens();
       }
@@ -112,45 +106,21 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [accessToken, decodeAndSetUser]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const res = await api.post("/auth/login", { email, password });
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      res.data;
-
-    setAccessToken(newAccessToken);
-    setRefreshToken(newRefreshToken);
-    localStorage.setItem("accessToken", newAccessToken);
-    localStorage.setItem("refreshToken", newRefreshToken);
-
-    const decodedUser = decodeAndSetUser(newAccessToken);
-    
-    if (!decodedUser) {
-      throw new Error("Failed to authenticate user");
-    }
-    
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+    setTokens(newAccessToken, newRefreshToken);
     return res.data;
-  };
+  }, [setTokens]);
 
-  const register = async (name, email, password, phoneNumber) => {
-    const res = await api.post("/auth/register", {
-      name,
-      email,
-      password,
-      phoneNumber,
-    });
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      res.data;
-
-    setAccessToken(newAccessToken);
-    setRefreshToken(newRefreshToken);
-    localStorage.setItem("accessToken", newAccessToken);
-    localStorage.setItem("refreshToken", newRefreshToken);
-
-    decodeAndSetUser(newAccessToken);
+  const register = useCallback(async (name, email, password, phoneNumber) => {
+    const res = await api.post("/auth/register", { name, email, password, phoneNumber });
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+    setTokens(newAccessToken, newRefreshToken);
     return res.data;
-  };
+  }, [setTokens]);
 
-  const logout = async (showMessage = true) => {
+  const logout = useCallback(async (showMessage = true) => {
     try {
       if (refreshToken) {
         await api.post("/auth/logout", { refreshToken });
@@ -169,11 +139,11 @@ export const AuthProvider = ({ children }) => {
       setRefreshToken(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("cart"); // Clear cart on logout
+      localStorage.removeItem("cart");
     }
-  };
+  }, [refreshToken]);
 
-  const logoutAllSessions = async () => {
+  const logoutAllSessions = useCallback(async () => {
     try {
       await api.post("/auth/logout-all");
       toast.success("All sessions logged out successfully!");
@@ -188,9 +158,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("cart");
     }
-  };
+  }, []);
 
-  const updateUser = async (userData) => {
+  const updateUser = useCallback(async (userData) => {
     try {
       const response = await api.put("/auth/profile", userData);
       const updatedUser = response.data;
@@ -203,32 +173,40 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.message || "Update failed",
       };
     }
-  };
+  }, []);
 
-  const setTokensFromOAuth2 = (token, refreshTokenValue) => {
-    setAccessToken(token);
-    setRefreshToken(refreshTokenValue);
-    decodeAndSetUser(token);
-  };
+  const contextValue = useMemo(() => ({
+    user,
+    accessToken,
+    refreshToken,
+    login,
+    register,
+    logout,
+    logoutAllSessions,
+    loading,
+    refreshing,
+    refreshTokens,
+    checkAndRefreshToken,
+    updateUser,
+    setTokensFromOAuth2: setTokens,
+  }), [
+    user,
+    accessToken,
+    refreshToken,
+    loading,
+    refreshing,
+    login,
+    register,
+    logout,
+    logoutAllSessions,
+    refreshTokens,
+    checkAndRefreshToken,
+    updateUser,
+    setTokens
+  ]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        refreshToken,
-        login,
-        register,
-        logout,
-        logoutAllSessions,
-        loading,
-        refreshing,
-        refreshTokens,
-        checkAndRefreshToken,
-        updateUser,
-        setTokensFromOAuth2,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

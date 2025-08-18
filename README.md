@@ -81,16 +81,16 @@ cd bloomkart
 
 #### Database Configuration
 1. Create a MySQL database:
-```sql
-CREATE DATABASE bloomkart;
-```
+   ```sql
+   CREATE DATABASE bloomkart;
+   ```
 
 2. Update `backend/src/main/resources/application.properties`:
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/bloomkart
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-```
+   ```properties
+   spring.datasource.url=jdbc:mysql://localhost:3306/bloomkart
+   spring.datasource.username=your_username
+   spring.datasource.password=your_password
+   ```
 
 #### Google OAuth2 Setup
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -101,10 +101,10 @@ spring.datasource.password=your_password
    - `http://localhost:8080/api/oauth2/callback/google`
    - `http://localhost:5173/oauth2/redirect`
 6. Update `application.properties` with your credentials:
-```properties
-spring.security.oauth2.client.registration.google.client-id=your_client_id
-spring.security.oauth2.client.registration.google.client-secret=your_client_secret
-```
+   ```properties
+   spring.security.oauth2.client.registration.google.client-id=your_client_id
+   spring.security.oauth2.client.registration.google.client-secret=your_client_secret
+   ```
 
 #### Run Backend
 ```bash
@@ -238,16 +238,16 @@ docker-compose up -d
 
 ### Manual Deployment
 1. Build the backend:
-```bash
-cd backend
-mvn clean package
-```
+   ```bash
+   cd backend
+   mvn clean package
+   ```
 
 2. Build the frontend:
-```bash
-cd frontend
-npm run build
-```
+   ```bash
+   cd frontend
+   npm run build
+   ```
 
 3. Deploy the JAR file and built frontend to your server.
 

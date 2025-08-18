@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://localhost:8080/api", // Java Spring Boot backend
-  withCredentials: false,
+  withCredentials: true,
 });
 
 // Add request interceptor to include JWT token and handle token refresh
@@ -62,7 +62,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401 errors (unauthorized)
+    // Do not intercept 401 for login or register
+    if (originalRequest.url === '/auth/login' || originalRequest.url === '/auth/register') {
+        return Promise.reject(error);
+    }
+
+    // Handle 401 errors (unauthorized) for other requests
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
