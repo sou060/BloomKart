@@ -55,6 +55,11 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>8.0.33</version>
         </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- JWT -->
         <dependency>
@@ -128,4 +133,4 @@
             </plugin>
         </plugins>
     </build>
-</project> 
+</project>
