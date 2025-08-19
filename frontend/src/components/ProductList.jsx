@@ -365,15 +365,14 @@ const ProductList = () => {
                             ₹{product.price}
                           </span>
                         </div>
-                        <div
-                          className="product-controls-row"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className="product-controls-row">
                           <div className="cart-controls-container">
                             {productQuantity === 0 ? (
                               <button
                                 className="btn btn-primary btn-sm cart-add-btn"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
                                   addToCart(product, 1);
                                   toast.success(
                                     `${product.name} added to cart!`
@@ -388,7 +387,9 @@ const ProductList = () => {
                                 <button
                                   className="cart-btn"
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     if (productQuantity > 1) {
                                       updateQuantity(
                                         product.id,
@@ -408,12 +409,14 @@ const ProductList = () => {
                                 <button
                                   className="cart-btn"
                                   type="button"
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     updateQuantity(
                                       product.id,
                                       productQuantity + 1
-                                    )
-                                  }
+                                    );
+                                  }}
                                 >
                                   <FaPlus />
                                 </button>

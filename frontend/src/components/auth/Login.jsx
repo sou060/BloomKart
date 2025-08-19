@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
@@ -13,11 +13,16 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect if already logged in
-  React.useEffect(() => {
+  // This useEffect hook will run when the `user` state changes.
+  // It contains the correct role-based redirection logic.
+  useEffect(() => {
     if (user) {
-      const from = location.state?.from?.pathname || "/";
-      navigate(from, { replace: true });
+      if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        const from = location.state?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      }
     }
   }, [user, navigate, location]);
 
@@ -33,18 +38,10 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await login(formData.email, formData.password);
-
-      // Add a small delay to ensure state is updated
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
+      // Call the login function. It will update the user in the context.
+      // The useEffect hook above will then handle the redirection.
+      await login(formData.email, formData.password);
       toast.success("Login successful!");
-
-      // Check where we want to redirect to
-      const from = location.state?.from?.pathname || "/";
-
-      // Use replace to avoid back button issues
-      navigate(from, { replace: true });
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage = error.response?.data?.message || "Login failed";

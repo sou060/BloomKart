@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import ProductList from "./components/ProductList";
@@ -92,126 +92,32 @@ function App() {
                                 }
                             />
                             {/* Admin routes */}
+                            {/* Create a parent route for the admin section that handles the layout and protection */}
                             <Route
                                 path="/admin"
                                 element={
                                     <AdminRoute>
                                         <AdminLayout>
-                                            <AdminDashboard />
+                                            {/* The Outlet component will render the matched child route */}
+                                            <Outlet />
                                         </AdminLayout>
                                     </AdminRoute>
                                 }
-                            />
-                            <Route
-                                path="/admin/products"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminProducts />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/products/add"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AddProduct />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/products/:id/edit"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <EditProduct />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/orders"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminOrders />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/users"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminUsers />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/analytics"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminAnalytics />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/settings"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminSettings />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/orders/:id"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminOrderDetail />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/reports"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminReports />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/inventory"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminInventory />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
-                            <Route
-                                path="/admin/notifications"
-                                element={
-                                    <AdminRoute>
-                                        <AdminLayout>
-                                            <AdminNotifications />
-                                        </AdminLayout>
-                                    </AdminRoute>
-                                }
-                            />
+                            >
+                                {/* These child routes will render inside the AdminLayout's <Outlet /> */}
+                                <Route path="dashboard" element={<AdminDashboard />} />
+                                <Route path="products" element={<AdminProducts />} />
+                                <Route path="products/add" element={<AddProduct />} />
+                                <Route path="products/:id/edit" element={<EditProduct />} />
+                                <Route path="orders" element={<AdminOrders />} />
+                                <Route path="orders/:id" element={<AdminOrderDetail />} />
+                                <Route path="users" element={<AdminUsers />} />
+                                <Route path="analytics" element={<AdminAnalytics />} />
+                                <Route path="reports" element={<AdminReports />} />
+                                <Route path="inventory" element={<AdminInventory />} />
+                                <Route path="notifications" element={<AdminNotifications />} />
+                                <Route path="settings" element={<AdminSettings />} />
+                            </Route>
                         </Routes>
                     </Router>
                 </CartProvider>
