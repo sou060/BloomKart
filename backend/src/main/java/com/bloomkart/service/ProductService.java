@@ -23,7 +23,7 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    @Value("${file.upload.path}")
+    @Value("${file.upload-dir}")
     private String uploadPath;
 
     public Page<Product> getAllProducts(Pageable pageable) {
@@ -148,4 +148,4 @@ public class ProductService {
             throw new RuntimeException("Failed to save image", e);
         }
     }
-} 
+}

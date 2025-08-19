@@ -16,7 +16,7 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 public class FileUploadController {
 
-    @Value("${file.upload.path}")
+    @Value("${file.upload-dir}")
     private String uploadPath;
 
     @PostMapping("/image")
@@ -40,4 +40,4 @@ public class FileUploadController {
             return ResponseEntity.badRequest().body("Failed to upload file: " + e.getMessage());
         }
     }
-} 
+}
